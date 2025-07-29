@@ -60,6 +60,32 @@
     }
     input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
     .lil-gui.root { z-index: 101; }
+
+    /* --- Адаптация для мобильных устройств --- */
+    @media (max-width: 768px) {
+        #settings-panel.active {
+            /* Убираем центрирование, прижимаем к верху */
+            top: 20px;
+            left: 5vw;
+            right: 5vw;
+            width: auto; /* Ширина теперь определяется отступами left/right */
+            transform: translate(0, 0) scale(1); /* Сбрасываем transform для активного состояния */
+
+            /* Добавляем ограничение по высоте и прокрутку */
+            max-height: calc(100vh - 40px); /* 20px отступ сверху и 20px снизу */
+            overflow-y: auto; /* Включаем вертикальную прокрутку, если нужно */
+        }
+        
+        #settings-panel {
+            /* Применяем сброс transform и для неактивного состояния, чтобы анимация была плавной */
+             transform: translate(0, -20px) scale(0.95);
+        }
+
+        /* Уменьшим паддинг, чтобы было больше места */
+        #settings-panel {
+            padding: 20px 15px;
+        }
+    }
 </style>
 </head>
 <body>
@@ -84,12 +110,9 @@ const CONFIG = {
     robotScale: 8.5, 
     followSpeed: 0.05, 
     maxFollowAngle: 0.7, 
-    
-    // --- ОБНОВЛЕННЫЕ ПАРАМЕТРЫ ФИЗИКИ ДЛЯ ОЩУЩЕНИЯ "ТЯЖЕСТИ" ---
-    dragRotationSpeed: 0.007,    // ЕЩЕ НИЖЕ: чтобы модель было сложнее "раскрутить"
-    inertiaMultiplier: 0.4,      // Слегка уменьшенная сила инерционного "пинка"
-    inertiaDamping: 0.98,        // Высокое значение для долгого и плавного затухания
-    
+    dragRotationSpeed: 0.007,
+    inertiaMultiplier: 0.4,
+    inertiaDamping: 0.98,
     velocityThreshold: 0.0001,
     returnHomeDelay: 2000, 
     levitationAmplitude: 0.15, 
@@ -163,7 +186,7 @@ function setupLevitationRings() {
     levitationRings = [];
     const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
     for (let i = 0; i < CONFIG.rings.numRings; i++) {
-        const ringGeometry = new THREE.TorusGeometry(0.9, 0.07, 16, 100);
+        const ringGeometry = new THREE.TorusGeometry(1.0, 0.05, 16, 100);
         const ringMaterial = new THREE.MeshStandardMaterial({ 
             color: CONFIG.rings.color, 
             emissive: CONFIG.rings.color, 
@@ -191,40 +214,36 @@ function animate() {
         
         // Логика вращения и следования
         if (!isDragging && !isReturningHome && angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
-            // Следование за мышкой
             model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed);
         } else if (isReturningHome) {
-            // Возврат в исходное положение
             model.quaternion.slerp(homeQuaternion, 0.05);
             if(model.quaternion.angleTo(homeQuaternion) < 0.01) isReturningHome = false;
         } else if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) {
-            // Инерционное вращение
             const deltaRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(
                 angularVelocity.y * deltaTime * CONFIG.inertiaMultiplier, 
                 angularVelocity.x * deltaTime * CONFIG.inertiaMultiplier, 
                 0, 'XYZ'
             ));
             model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
-            
-            // Затухание
             angularVelocity.multiplyScalar(CONFIG.inertiaDamping);
-            
-            // Принудительная остановка при низкой скорости
             if (angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
                 angularVelocity.set(0, 0);
             }
         }
     }
     
-    // Анимация колец левитации
+    // ИСПРАВЛЕННАЯ АНИМАЦИЯ КОЛЕЦ
     const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
     levitationRings.forEach(ring => {
         ring.position.y -= CONFIG.rings.speed * deltaTime;
-        if (ring.position.y < CONFIG.rings.bottomY) ring.position.y += levitationHeight;
+        if (ring.position.y < CONFIG.rings.bottomY) {
+            ring.position.y += levitationHeight;
+        }
         let progress = (ring.position.y - CONFIG.rings.bottomY) / levitationHeight;
+        progress = Math.max(0, Math.min(1, progress));
         ring.material.opacity = progress * CONFIG.rings.baseOpacity;
         ring.material.emissiveIntensity = progress * CONFIG.rings.baseIntensity;
-        const scale = 0.7 + (1 - progress) * 0.5;
+        const scale = 0.7 + progress * 0.3;
         ring.scale.set(scale, scale, scale);
     });
     
@@ -255,45 +274,23 @@ function onPointerUp() {
 
 function onPointerMove(e) {
     if (!model) return;
-    
     const x = e.clientX || e.touches?.[0].clientX; 
     const y = e.clientY || e.touches?.[0].clientY;
     
     if (isDragging) {
-        const deltaMove = { 
-            x: x - previousMousePosition.x, 
-            y: y - previousMousePosition.y 
-        };
-        
-        // Применение вращения при перетаскивании
+        const deltaMove = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
         const deltaRotation = new THREE.Quaternion().setFromEuler(
-            new THREE.Euler(
-                deltaMove.y * CONFIG.dragRotationSpeed, 
-                deltaMove.x * CONFIG.dragRotationSpeed, 
-                0, 
-                'XYZ'
-            )
+            new THREE.Euler(deltaMove.y * CONFIG.dragRotationSpeed, deltaMove.x * CONFIG.dragRotationSpeed, 0, 'XYZ')
         );
-        
         model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
-        
-        // Запись угловой скорости для инерции
         angularVelocity.set(deltaMove.x, deltaMove.y);
         previousMousePosition = { x, y };
     } else if (isMouseOver) {
-        // ОКОНЧАТЕЛЬНОЕ ИСПРАВЛЕНИЕ СЛЕЖЕНИЯ
         const rect = container.getBoundingClientRect();
         const mouseX = ((x - rect.left) / rect.width) * 2 - 1;
-        const mouseY = ((y - rect.top) / rect.height) * 2 - 1; // Y от -1 (вверху) до +1 (внизу)
-        
-        // Создаем кватернион, применяя инверсию прямо здесь
+        const mouseY = ((y - rect.top) / rect.height) * 2 - 1;
         targetQuaternion.setFromEuler(
-            new THREE.Euler(
-                mouseY * CONFIG.maxFollowAngle, // Ставим знак "-" здесь. Теперь все будет правильно.
-                mouseX * CONFIG.maxFollowAngle,
-                0, 
-                'XYZ'
-            )
+            new THREE.Euler( -mouseY * CONFIG.maxFollowAngle, mouseX * CONFIG.maxFollowAngle, 0, 'XYZ')
         );
     }
 }
@@ -302,36 +299,19 @@ function onPointerMove(e) {
 container.addEventListener('mousedown', onPointerDown); 
 window.addEventListener('mouseup', onPointerUp); 
 window.addEventListener('mousemove', onPointerMove);
-
-container.addEventListener('touchstart', (e) => { 
-    e.preventDefault(); 
-    onPointerDown(e); 
-}, { passive: false }); 
-
+container.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e); }, { passive: false }); 
 window.addEventListener('touchend', onPointerUp); 
-
-window.addEventListener('touchmove', (e) => { 
-    e.preventDefault(); 
-    onPointerMove(e); 
-}, { passive: false });
-
+window.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
 container.addEventListener('mouseenter', () => { 
     isMouseOver = true; 
     clearTimeout(returnHomeTimeout); 
-    if (model) model.traverse(c => { 
-        if(c.isMesh) c.material.emissiveIntensity = CONFIG.hoverEmissive; 
-    }); 
+    if (model) model.traverse(c => { if(c.isMesh) c.material.emissiveIntensity = CONFIG.hoverEmissive; }); 
 });
-
 container.addEventListener('mouseleave', () => { 
     isMouseOver = false; 
     targetQuaternion.copy(homeQuaternion); 
-    returnHomeTimeout = setTimeout(() => { 
-        isReturningHome = true; 
-    }, CONFIG.returnHomeDelay); 
-    if (model) model.traverse(c => { 
-        if(c.isMesh) c.material.emissiveIntensity = CONFIG.baseEmissive; 
-    }); 
+    returnHomeTimeout = setTimeout(() => { isReturningHome = true; }, CONFIG.returnHomeDelay); 
+    if (model) model.traverse(c => { if(c.isMesh) c.material.emissiveIntensity = CONFIG.baseEmissive; }); 
 });
 
 // --- БЛОК ОБРАБОТКИ ИЗМЕНЕНИЯ РАЗМЕРА ОКНА ---
@@ -358,27 +338,15 @@ function bindUiControls() {
         'inertiaDamping': (v) => CONFIG.inertiaDamping = parseFloat(v),
         'levitationAmplitude': (v) => CONFIG.levitationAmplitude = parseFloat(v), 
         'levitationSpeed': (v) => CONFIG.levitationSpeed = parseFloat(v),
-        'robotScale': (v) => { 
-            CONFIG.robotScale = parseFloat(v); 
-            model?.scale.set(v, v, v); 
-        },
+        'robotScale': (v) => { CONFIG.robotScale = parseFloat(v); model?.scale.set(v, v, v); },
         'mainLight': (v) => mainLight.intensity = parseFloat(v), 
         'accentLight': (v) => accentLight.intensity = parseFloat(v),
         'accentLightColor': (v) => accentLight.color.set(v),
-        'ringCount': { 
-            event: 'change', 
-            handler: (v) => { 
-                CONFIG.rings.numRings = parseInt(v); 
-                setupLevitationRings(); 
-            } 
-        },
+        'ringCount': { event: 'change', handler: (v) => { CONFIG.rings.numRings = parseInt(v); setupLevitationRings(); } },
         'ringSpeed': (v) => CONFIG.rings.speed = parseFloat(v),
         'ringColor': (v) => { 
             CONFIG.rings.color = v; 
-            levitationRings.forEach(r => { 
-                r.material.color.set(v); 
-                r.material.emissive.set(v); 
-            }); 
+            levitationRings.forEach(r => { r.material.color.set(v); r.material.emissive.set(v); }); 
         }
     };
     
@@ -386,19 +354,11 @@ function bindUiControls() {
         const el = document.getElementById(id);
         if (el) {
             let value;
-            if (id.startsWith('ring')) { 
-                value = CONFIG.rings[id.replace('ring', '').toLowerCase()]; 
-            }
-            else if (id === 'dragSensitivity') { 
-                value = CONFIG.dragRotationSpeed; 
-            }
-            else { 
-                value = CONFIG[id]; 
-            }
-            
+            if (id.startsWith('ring')) { value = CONFIG.rings[id.replace('ring', '').toLowerCase()]; }
+            else if (id === 'dragSensitivity') { value = CONFIG.dragRotationSpeed; }
+            else { value = CONFIG[id]; }
             if (el.type === 'range' && value !== undefined) el.value = value;
             if (el.type === 'color' && value !== undefined) el.value = value;
-            
             const eventType = typeof controls[id] === 'object' ? controls[id].event : 'input';
             const handler = typeof controls[id] === 'object' ? controls[id].handler : controls[id];
             el.addEventListener(eventType, e => handler(e.target.value));
