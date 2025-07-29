@@ -5,301 +5,413 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoPlus - Interactive Drone</title>
     
-    <!-- Подключение библиотек Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.17"></script>
 
-<!-- ====================================================================================== -->
-<!-- БЛОК 1: CSS-СТИЛИ (Адаптированные) -->
-<!-- ====================================================================================== -->
 <style>
-    * { 
-        margin: 0; 
-        padding: 0; 
-        box-sizing: border-box; 
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     :root { 
-        --primary-color: #00FF47; 
-        --dark-bg: #000; 
-        --card-bg: rgba(0, 59, 17, 0.5); 
+        --primary-color: #00FF47; --dark-color: #000502; --grid-color: rgba(0, 255, 71, 0.15);
+        --glass-bg: rgba(0, 41, 15, 0.5); --glass-border: rgba(0, 255, 71, 0.2);
     }
-
-    /* Делаем тело контейнером для центрирования */
     body { 
-        background-color: var(--dark-bg); 
-        overflow: hidden; /* Убираем скролл */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 15px; /* Небольшой отступ от краев на мобильных */
+        overflow: hidden; background-color: var(--dark-color);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #eee;
     }
-
-    /* Стили для рамки */
     .hero { 
-        padding: 20px; /* Внутренний отступ рамки */
-        background-color: var(--card-bg); 
-        border-radius: 20px; 
-        position: relative; 
-        overflow: hidden; 
-        box-shadow: 0 8px 32px rgba(0, 59, 17, 0.3);
+        width: 100vw; height: 100vh; position: relative; overflow: hidden; 
+        background: radial-gradient(ellipse at center, rgba(0, 26, 10, 0.5) 0%, var(--dark-color) 70%);
     }
-    
-    /* Эффект свечения для рамки */
-    .hero::before { 
-        content: ''; 
-        position: absolute; 
-        top: -50%; 
-        left: -50%; 
-        width: 200%; 
-        height: 200%; 
-        background: radial-gradient(circle, rgba(0, 255, 71, 0.1) 0%, rgba(0, 0, 0, 0) 70%); 
-        z-index: 0; 
+    .hero::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+        background-size: 50px 50px; opacity: 0.5; animation: pan-grid 20s linear infinite; z-index: 0;
     }
-
-    /* Стили для контейнера с дроном (теперь он адаптивный) */
-    .robot-img { 
-        /* Занимает почти всю доступную ширину/высоту, но не более 450px */
-        width: 90vw;
-        height: 80vh;
-        max-width: 450px;
-        max-height: 450px;
-        
-        cursor: grab; 
-        border-radius: 15px; 
-        overflow: hidden; 
-        position: relative; 
-        z-index: 1; /* Чтобы был над свечением */
+    @keyframes pan-grid { 0% { background-position: 0 0; } 100% { background-position: 50px 50px; } }
+    .robot-img { width: 100%; height: 100%; cursor: grab; position: relative; z-index: 1; }
+    #settings-toggle {
+        position: fixed; bottom: 25px; right: 25px; width: 50px; height: 50px;
+        background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 50%;
+        backdrop-filter: blur(10px); cursor: pointer; display: flex; align-items: center;
+        justify-content: center; transition: background 0.3s, transform 0.3s; z-index: 100;
     }
+    #settings-toggle:hover { background: rgba(0, 61, 22, 0.7); transform: scale(1.1); }
+    #settings-toggle svg { width: 24px; height: 24px; fill: var(--primary-color); }
+    #settings-panel {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+        width: 90vw; max-width: 800px; background: var(--glass-bg); border: 1px solid var(--glass-border);
+        border-radius: 20px; backdrop-filter: blur(15px); padding: 25px; z-index: 99;
+        opacity: 0; pointer-events: none; transition: opacity 0.4s, transform 0.4s;
+    }
+    #settings-panel.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .setting-card { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; }
+    .setting-card h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 16px; letter-spacing: 0.5px; }
+    .setting-control { margin-bottom: 10px; }
+    .setting-control label { display: block; font-size: 13px; margin-bottom: 8px; opacity: 0.8; }
+    input[type="range"] {
+        -webkit-appearance: none; width: 100%; height: 4px; background: rgba(0, 255, 71, 0.2);
+        border-radius: 2px; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary-color);
+        border-radius: 50%; border: 2px solid var(--dark-color);
+    }
+    input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
+    .lil-gui.root { z-index: 101; }
 </style>
-<!-- ====================================================================================== -->
-<!-- КОНЕЦ БЛОКА 1 -->
-<!-- ====================================================================================== -->
 </head>
 <body>
 
-<!-- ====================================================================================== -->
-<!-- БЛОК 2: HTML-СТРУКТУРА (Минималистичная) -->
-<!-- ====================================================================================== -->
+<section class="hero"><div class="robot-img" id="robot-container"></div></section>
 
-<section class="hero">
-    <div class="robot-img" id="robot-container"></div>
-</section>
+<button id="settings-toggle"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.69-1.62-0.92L14.4,2.23c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,4.65C8.63,4.88,8.1,5.19,7.6,5.57L5.22,4.61C5,4.54,4.75,4.61,4.62,4.83L2.71,8.15 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.8,11.06,4.78,11.37,4.78,11.69c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.69,1.62,0.92L9.6,21.77 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.42c0.59-0.23,1.12-0.54,1.62-0.92l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button>
 
-<!-- ====================================================================================== -->
-<!-- КОНЕЦ БЛОКА 2 -->
-<!-- ====================================================================================== -->
+<div id="settings-panel">
+    <div class="settings-grid">
+        <div class="setting-card"><h3>Поведение</h3><div class="setting-control"><label for="followSpeed">Скорость слежения</label><input type="range" id="followSpeed" min="0.01" max="0.2" step="0.01"></div><div class="setting-control"><label for="maxFollowAngle">Угол обзора</label><input type="range" id="maxFollowAngle" min="0" max="1.5" step="0.1"></div></div>
+        <div class="setting-card"><h3>Физика вращения</h3><div class="setting-control"><label for="dragSensitivity">Чувствительность</label><input type="range" id="dragSensitivity" min="0.005" max="0.05" step="0.001"></div><div class="setting-control"><label for="inertiaMultiplier">Множитель инерции (тяжесть)</label><input type="range" id="inertiaMultiplier" min="0.01" max="1" step="0.01"></div><div class="setting-control"><label for="inertiaDamping">Затухание</label><input type="range" id="inertiaDamping" min="0.8" max="0.99" step="0.01"></div></div>
+        <div class="setting-card"><h3>Левитация</h3><div class="setting-control"><label for="levitationAmplitude">Амплитуда</label><input type="range" id="levitationAmplitude" min="0" max="0.5" step="0.01"></div><div class="setting-control"><label for="levitationSpeed">Скорость</label><input type="range" id="levitationSpeed" min="0" max="3" step="0.1"></div></div>
+        <div class="setting-card"><h3>Внешний вид</h3><div class="setting-control"><label for="robotScale">Масштаб</label><input type="range" id="robotScale" min="1" max="15" step="0.1"></div><div class="setting-control"><label for="mainLight">Основной свет</label><input type="range" id="mainLight" min="0" max="3" step="0.1"></div><div class="setting-control"><label for="accentLight">Акцентный свет</label><input type="range" id="accentLight" min="0" max="3" step="0.1"></div><div class="setting-control"><label for="accentLightColor">Цвет акцента</label><input type="color" id="accentLightColor"></div></div>
+        <div class="setting-card"><h3>Кольца</h3><div class="setting-control"><label for="ringCount">Количество</label><input type="range" id="ringCount" min="1" max="10" step="1"></div><div class="setting-control"><label for="ringSpeed">Скорость</label><input type="range" id="ringSpeed" min="0.1" max="2" step="0.1"></div><div class="setting-control"><label for="ringColor">Цвет</label><input type="color" id="ringColor"></div></div>
+    </div>
+</div>
 
-
-<!-- ====================================================================================== -->
-<!-- БЛОК 3: JAVASCRIPT ДЛЯ 3D-МОДЕЛИ (Финальная версия) -->
-<!-- ====================================================================================== -->
 <script>
-    // 1. Инициализация
-    const container = document.getElementById('robot-container');
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #00FF47; font-size: 18px; z-index: 2;';
-    container.appendChild(loadingIndicator);
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
+// --- БЛОК КОНФИГУРАЦИИ ---
+const CONFIG = {
+    robotScale: 8.5, 
+    followSpeed: 0.05, 
+    maxFollowAngle: 0.7, 
+    
+    // --- ОБНОВЛЕННЫЕ ПАРАМЕТРЫ ФИЗИКИ ДЛЯ ОЩУЩЕНИЯ "ТЯЖЕСТИ" ---
+    dragRotationSpeed: 0.007,    // ЕЩЕ НИЖЕ: чтобы модель было сложнее "раскрутить"
+    inertiaMultiplier: 0.4,      // Слегка уменьшенная сила инерционного "пинка"
+    inertiaDamping: 0.98,        // Высокое значение для долгого и плавного затухания
+    
+    velocityThreshold: 0.0001,
+    returnHomeDelay: 2000, 
+    levitationAmplitude: 0.15, 
+    levitationSpeed: 1.2,
+    baseEmissive: 0.1, 
+    hoverEmissive: 0.2, 
+    ambientLight: 1.2, 
+    mainLight: 1.5, 
+    accentLight: 0.8,
+    accentLightColor: '#00ff47',
+    rings: { 
+        numRings: 3, 
+        color: '#00ff47', 
+        speed: 0.5, 
+        topY: -1.0, 
+        bottomY: -2.0, 
+        baseOpacity: 0.7, 
+        baseIntensity: 1.5 
+    }
+};
 
-    // 2. Освещение
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
-    directionalLight1.position.set(5, 10, 5);
-    scene.add(directionalLight1);
-    const directionalLight2 = new THREE.DirectionalLight(0x00ff47, 0.8);
-    directionalLight2.position.set(-5, 5, -5);
-    scene.add(directionalLight2);
+// --- БЛОК ИНИЦИАЛИЗАЦИИ THREE.JS ---
+const container = document.getElementById('robot-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
 
-    // 3. Загрузка модели
-    let model;
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-        // ИСПРАВЛЕНО: Возвращаем локальный путь к модели
-        'model.glb',
-        (gltf) => {
-            loadingIndicator.style.display = 'none';
-            model = gltf.scene;
-            model.scale.set(9.0, 9.0, 9.0);
-            model.position.set(0, 0, 0);
-            model.quaternion.identity(); 
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.emissive = new THREE.Color(0x001a0a);
-                    child.material.emissiveIntensity = 0.1;
-                }
-            });
-            scene.add(model);
-            setupLevitationEffect();
-        },
-        (progress) => {
-            const percent = progress.total > 0 ? Math.round((progress.loaded / progress.total) * 100) : 0;
-            loadingIndicator.textContent = `Loading ${percent}%`;
-        },
-        (error) => {
-            console.error('An error happened while loading the model:', error);
-            loadingIndicator.innerHTML = `<div style="color: #ff4444;">Ошибка загрузки</div>`;
+// --- БЛОК ОСВЕЩЕНИЯ ---
+const ambientLight = new THREE.AmbientLight(0xffffff, CONFIG.ambientLight); 
+scene.add(ambientLight);
+const mainLight = new THREE.DirectionalLight(0xffffff, CONFIG.mainLight); 
+mainLight.position.set(5, 10, 5); 
+scene.add(mainLight);
+const accentLight = new THREE.DirectionalLight(CONFIG.accentLightColor, CONFIG.accentLight); 
+accentLight.position.set(-5, 5, -5); 
+scene.add(accentLight);
+
+// --- БЛОК ПЕРЕМЕННЫХ И СОСТОЯНИЙ ---
+let model, levitationRings = [];
+const clock = new THREE.Clock();
+const homeQuaternion = new THREE.Quaternion(), targetQuaternion = new THREE.Quaternion();
+let isDragging = false, isMouseOver = false, isReturningHome = false;
+let returnHomeTimeout = null;
+let angularVelocity = new THREE.Vector2(0, 0);
+let previousMousePosition = { x: 0, y: 0 };
+
+// --- БЛОК ЗАГРУЗКИ МОДЕЛИ ---
+const loader = new THREE.GLTFLoader();
+loader.load('model.glb', (gltf) => {
+    model = gltf.scene;
+    model.scale.set(CONFIG.robotScale, CONFIG.robotScale, CONFIG.robotScale);
+    homeQuaternion.copy(model.quaternion);
+    targetQuaternion.copy(model.quaternion);
+    model.traverse((c) => { 
+        if (c.isMesh) { 
+            c.material.emissive = new THREE.Color(0x001a0a); 
+            c.material.emissiveIntensity = CONFIG.baseEmissive; 
         }
-    );
+    });
+    scene.add(model);
+    setupLevitationRings();
+    bindUiControls();
+});
 
-    // 4. Настройка камеры
-    camera.position.set(0, 0, 6);
-    camera.lookAt(0, 0, 0);
+// --- БЛОК СОЗДАНИЯ КОЛЕЦ ЛЕВИТАЦИИ ---
+function setupLevitationRings() {
+    levitationRings.forEach(ring => scene.remove(ring));
+    levitationRings = [];
+    const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
+    for (let i = 0; i < CONFIG.rings.numRings; i++) {
+        const ringGeometry = new THREE.TorusGeometry(0.9, 0.07, 16, 100);
+        const ringMaterial = new THREE.MeshStandardMaterial({ 
+            color: CONFIG.rings.color, 
+            emissive: CONFIG.rings.color, 
+            transparent: true 
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = CONFIG.rings.topY - (i * (levitationHeight / CONFIG.rings.numRings));
+        scene.add(ring);
+        levitationRings.push(ring);
+    }
+}
 
-    // 5. Переменные для управления и анимации
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
-    const initialYPosition = 0;
-    const clock = new THREE.Clock();
+// --- БЛОК ПОЗИЦИОНИРОВАНИЯ КАМЕРЫ ---
+camera.position.set(0, 0, 10);
+
+// --- БЛОК АНИМАЦИИ ---
+function animate() {
+    requestAnimationFrame(animate);
+    const deltaTime = clock.getDelta(), elapsedTime = clock.getElapsedTime();
     
-    let angularVelocity = new THREE.Vector2(0, 0);
-    let lastDeltaMove = { x: 0, y: 0 };
-    const homeQuaternion = new THREE.Quaternion();
-    let isReturningHome = false;
-    
-    let effectState = 'ACTIVE';
-    let fadeStartTime = 0;
-    let returnHomeTimeout = null;
+    if (model) {
+        // Анимация левитации
+        model.position.y = Math.sin(elapsedTime * CONFIG.levitationSpeed) * CONFIG.levitationAmplitude;
         
-    let levitationRings = [];
-    const NUM_RINGS = 3;
-    const CASCADE_DELAY = 0.15;
-    const LEVITATION_TOP = -1.0;
-    const LEVITATION_BOTTOM = -2.0;
-    const LEVITATION_SPEED = 0.5;
-
-    function updateRingVisuals(ring, levitationHeight) {
-        let progress = (ring.position.y - LEVITATION_BOTTOM) / levitationHeight;
-        progress = Math.max(0, Math.min(1, progress));
+        // Логика вращения и следования
+        if (!isDragging && !isReturningHome && angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
+            // Следование за мышкой
+            model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed);
+        } else if (isReturningHome) {
+            // Возврат в исходное положение
+            model.quaternion.slerp(homeQuaternion, 0.05);
+            if(model.quaternion.angleTo(homeQuaternion) < 0.01) isReturningHome = false;
+        } else if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) {
+            // Инерционное вращение
+            const deltaRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(
+                angularVelocity.y * deltaTime * CONFIG.inertiaMultiplier, 
+                angularVelocity.x * deltaTime * CONFIG.inertiaMultiplier, 
+                0, 'XYZ'
+            ));
+            model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
+            
+            // Затухание
+            angularVelocity.multiplyScalar(CONFIG.inertiaDamping);
+            
+            // Принудительная остановка при низкой скорости
+            if (angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
+                angularVelocity.set(0, 0);
+            }
+        }
+    }
+    
+    // Анимация колец левитации
+    const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
+    levitationRings.forEach(ring => {
+        ring.position.y -= CONFIG.rings.speed * deltaTime;
+        if (ring.position.y < CONFIG.rings.bottomY) ring.position.y += levitationHeight;
+        let progress = (ring.position.y - CONFIG.rings.bottomY) / levitationHeight;
+        ring.material.opacity = progress * CONFIG.rings.baseOpacity;
+        ring.material.emissiveIntensity = progress * CONFIG.rings.baseIntensity;
         const scale = 0.7 + (1 - progress) * 0.5;
         ring.scale.set(scale, scale, scale);
-
-        let targetOpacity = ring.material.opacity;
-        let targetIntensity = ring.material.emissiveIntensity;
-        const timeSinceFadeStart = clock.getElapsedTime() - fadeStartTime;
-
-        if (effectState === 'FADING_OUT' && timeSinceFadeStart >= ring.delay) {
-            targetOpacity = 0;
-            targetIntensity = 0;
-        } else if (effectState === 'FADING_IN' && timeSinceFadeStart >= ring.delay) {
-            targetOpacity = progress * 0.7;
-            targetIntensity = progress * 1.5;
-        }
-        
-        ring.material.opacity = THREE.MathUtils.lerp(ring.material.opacity, targetOpacity, 0.1);
-        ring.material.emissiveIntensity = THREE.MathUtils.lerp(ring.material.emissiveIntensity, targetIntensity, 0.1);
-    }
-
-    function setupLevitationEffect() {
-        const levitationHeight = LEVITATION_TOP - LEVITATION_BOTTOM;
-        for (let i = 0; i < NUM_RINGS; i++) {
-            const ringGeometry = new THREE.TorusGeometry(0.9, 0.07, 16, 100);
-            const ringMaterial = new THREE.MeshStandardMaterial({ color: 0x00FF47, emissive: 0x00FF47, emissiveIntensity: 1.0, transparent: true, opacity: 1.0 });
-            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-            ring.rotation.x = Math.PI / 2;
-            ring.position.y = LEVITATION_TOP - (i * (levitationHeight / NUM_RINGS));
-            ring.delay = (NUM_RINGS - 1 - i) * CASCADE_DELAY; 
-            scene.add(ring);
-            levitationRings.push(ring);
-            updateRingVisuals(ring, levitationHeight);
-        }
-    }
-    
-    function animate() {
-        requestAnimationFrame(animate);
-        const deltaTime = clock.getDelta();
-        
-        if (model) {
-            model.position.y = initialYPosition + Math.sin(clock.getElapsedTime() * 1.2) * 0.2;
-            
-            if (!isDragging && (Math.abs(angularVelocity.x) > 0.0001 || Math.abs(angularVelocity.y) > 0.0001)) {
-                const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(angularVelocity.x * deltaTime, angularVelocity.y * deltaTime, 0, 'XYZ'));
-                model.quaternion.multiplyQuaternions(deltaRotationQuaternion, model.quaternion);
-                angularVelocity.multiplyScalar(Math.pow(0.95, deltaTime * 60));
-            } else if (isReturningHome) {
-                model.quaternion.slerp(homeQuaternion, 0.05);
-                if (model.quaternion.angleTo(homeQuaternion) < 0.01) {
-                    isReturningHome = false;
-                    model.quaternion.copy(homeQuaternion);
-                    effectState = 'FADING_IN';
-                    fadeStartTime = clock.getElapsedTime();
-                }
-            }
-        }
-        
-        const levitationHeight = LEVITATION_TOP - LEVITATION_BOTTOM;
-        levitationRings.forEach(ring => {
-            ring.position.y -= LEVITATION_SPEED * deltaTime;
-            if (ring.position.y < LEVITATION_BOTTOM) {
-                ring.position.y += levitationHeight;
-            }
-            updateRingVisuals(ring, levitationHeight);
-        });
-
-        renderer.render(scene, camera);
-    }
-
-    animate();
-
-    function onPointerDown(e) {
-        isDragging = true;
-        isReturningHome = false;
-        angularVelocity.set(0, 0);
-        effectState = 'FADING_OUT';
-        fadeStartTime = clock.getElapsedTime();
-        clearTimeout(returnHomeTimeout);
-        container.style.cursor = 'grabbing';
-        const x = e.clientX || e.touches[0].clientX;
-        const y = e.clientY || e.touches[0].clientY;
-        previousMousePosition = { x: x, y: y };
-        lastDeltaMove = { x: 0, y: 0 };
-    }
-
-    function onPointerUp() {
-        isDragging = false;
-        container.style.cursor = 'grab';
-        angularVelocity.x = lastDeltaMove.y * 1.5;
-        angularVelocity.y = lastDeltaMove.x * 1.5;
-        clearTimeout(returnHomeTimeout);
-        returnHomeTimeout = setTimeout(() => { isReturningHome = true; }, 2000);
-    }
-
-    function onPointerMove(e) {
-        if (!isDragging || !model) return;
-        const x = e.clientX || e.touches[0].clientX;
-        const y = e.clientY || e.touches[0].clientY;
-        const deltaMove = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
-        
-        const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(deltaMove.y * 0.01, deltaMove.x * 0.01, 0, 'XYZ'));
-        model.quaternion.multiplyQuaternions(deltaRotationQuaternion, model.quaternion);
-        previousMousePosition = { x: x, y: y };
-        lastDeltaMove = deltaMove;
-    }
-
-    container.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('mouseup', onPointerUp);
-    window.addEventListener('mousemove', onPointerMove);
-    container.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e); }, { passive: false });
-    window.addEventListener('touchend', onPointerUp);
-    window.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
-    window.addEventListener('resize', () => {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
     });
-    container.addEventListener('mouseenter', () => { if (model) model.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 0.2; }); });
-    container.addEventListener('mouseleave', () => { if (model) model.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 0.1; }); });
-</script>
-<!-- ====================================================================================== -->
-<!-- КОНЕЦ БЛОКА 3 -->
-<!-- ====================================================================================== -->
+    
+    renderer.render(scene, camera);
+}
+animate();
 
+// --- БЛОК ОБРАБОТЧИКОВ СОБЫТИЙ ВЗАИМОДЕЙСТВИЯ ---
+function onPointerDown(e) { 
+    isDragging = true; 
+    isReturningHome = false; 
+    clearTimeout(returnHomeTimeout); 
+    angularVelocity.set(0, 0); 
+    container.style.cursor = 'grabbing'; 
+    previousMousePosition = { 
+        x: e.clientX || e.touches?.[0].clientX, 
+        y: e.clientY || e.touches?.[0].clientY 
+    }; 
+}
+
+function onPointerUp() { 
+    isDragging = false; 
+    container.style.cursor = 'grab'; 
+    returnHomeTimeout = setTimeout(() => { 
+        isReturningHome = true; 
+    }, CONFIG.returnHomeDelay); 
+}
+
+function onPointerMove(e) {
+    if (!model) return;
+    
+    const x = e.clientX || e.touches?.[0].clientX; 
+    const y = e.clientY || e.touches?.[0].clientY;
+    
+    if (isDragging) {
+        const deltaMove = { 
+            x: x - previousMousePosition.x, 
+            y: y - previousMousePosition.y 
+        };
+        
+        // Применение вращения при перетаскивании
+        const deltaRotation = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(
+                deltaMove.y * CONFIG.dragRotationSpeed, 
+                deltaMove.x * CONFIG.dragRotationSpeed, 
+                0, 
+                'XYZ'
+            )
+        );
+        
+        model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
+        
+        // Запись угловой скорости для инерции
+        angularVelocity.set(deltaMove.x, deltaMove.y);
+        previousMousePosition = { x, y };
+    } else if (isMouseOver) {
+        // ОКОНЧАТЕЛЬНОЕ ИСПРАВЛЕНИЕ СЛЕЖЕНИЯ
+        const rect = container.getBoundingClientRect();
+        const mouseX = ((x - rect.left) / rect.width) * 2 - 1;
+        const mouseY = ((y - rect.top) / rect.height) * 2 - 1; // Y от -1 (вверху) до +1 (внизу)
+        
+        // Создаем кватернион, применяя инверсию прямо здесь
+        targetQuaternion.setFromEuler(
+            new THREE.Euler(
+                mouseY * CONFIG.maxFollowAngle, // Ставим знак "-" здесь. Теперь все будет правильно.
+                mouseX * CONFIG.maxFollowAngle,
+                0, 
+                'XYZ'
+            )
+        );
+    }
+}
+
+// --- БЛОК ПРИВЯЗКИ СОБЫТИЙ ---
+container.addEventListener('mousedown', onPointerDown); 
+window.addEventListener('mouseup', onPointerUp); 
+window.addEventListener('mousemove', onPointerMove);
+
+container.addEventListener('touchstart', (e) => { 
+    e.preventDefault(); 
+    onPointerDown(e); 
+}, { passive: false }); 
+
+window.addEventListener('touchend', onPointerUp); 
+
+window.addEventListener('touchmove', (e) => { 
+    e.preventDefault(); 
+    onPointerMove(e); 
+}, { passive: false });
+
+container.addEventListener('mouseenter', () => { 
+    isMouseOver = true; 
+    clearTimeout(returnHomeTimeout); 
+    if (model) model.traverse(c => { 
+        if(c.isMesh) c.material.emissiveIntensity = CONFIG.hoverEmissive; 
+    }); 
+});
+
+container.addEventListener('mouseleave', () => { 
+    isMouseOver = false; 
+    targetQuaternion.copy(homeQuaternion); 
+    returnHomeTimeout = setTimeout(() => { 
+        isReturningHome = true; 
+    }, CONFIG.returnHomeDelay); 
+    if (model) model.traverse(c => { 
+        if(c.isMesh) c.material.emissiveIntensity = CONFIG.baseEmissive; 
+    }); 
+});
+
+// --- БЛОК ОБРАБОТКИ ИЗМЕНЕНИЯ РАЗМЕРА ОКНА ---
+window.addEventListener('resize', () => { 
+    camera.aspect = container.clientWidth / container.clientHeight; 
+    camera.updateProjectionMatrix(); 
+    renderer.setSize(container.clientWidth, container.clientHeight); 
+});
+
+// --- БЛОК УПРАВЛЕНИЯ ПАНЕЛЬЮ НАСТРОЕК ---
+const settingsToggle = document.getElementById('settings-toggle');
+const settingsPanel = document.getElementById('settings-panel');
+settingsToggle.addEventListener('click', () => { 
+    settingsPanel.classList.toggle('active'); 
+});
+
+// --- БЛОК ПРИВЯЗКИ ЭЛЕМЕНТОВ УПРАВЛЕНИЯ UI ---
+function bindUiControls() {
+    const controls = {
+        'followSpeed': (v) => CONFIG.followSpeed = parseFloat(v), 
+        'maxFollowAngle': (v) => CONFIG.maxFollowAngle = parseFloat(v),
+        'dragSensitivity': (v) => CONFIG.dragRotationSpeed = parseFloat(v), 
+        'inertiaMultiplier': (v) => CONFIG.inertiaMultiplier = parseFloat(v), 
+        'inertiaDamping': (v) => CONFIG.inertiaDamping = parseFloat(v),
+        'levitationAmplitude': (v) => CONFIG.levitationAmplitude = parseFloat(v), 
+        'levitationSpeed': (v) => CONFIG.levitationSpeed = parseFloat(v),
+        'robotScale': (v) => { 
+            CONFIG.robotScale = parseFloat(v); 
+            model?.scale.set(v, v, v); 
+        },
+        'mainLight': (v) => mainLight.intensity = parseFloat(v), 
+        'accentLight': (v) => accentLight.intensity = parseFloat(v),
+        'accentLightColor': (v) => accentLight.color.set(v),
+        'ringCount': { 
+            event: 'change', 
+            handler: (v) => { 
+                CONFIG.rings.numRings = parseInt(v); 
+                setupLevitationRings(); 
+            } 
+        },
+        'ringSpeed': (v) => CONFIG.rings.speed = parseFloat(v),
+        'ringColor': (v) => { 
+            CONFIG.rings.color = v; 
+            levitationRings.forEach(r => { 
+                r.material.color.set(v); 
+                r.material.emissive.set(v); 
+            }); 
+        }
+    };
+    
+    for (const id in controls) {
+        const el = document.getElementById(id);
+        if (el) {
+            let value;
+            if (id.startsWith('ring')) { 
+                value = CONFIG.rings[id.replace('ring', '').toLowerCase()]; 
+            }
+            else if (id === 'dragSensitivity') { 
+                value = CONFIG.dragRotationSpeed; 
+            }
+            else { 
+                value = CONFIG[id]; 
+            }
+            
+            if (el.type === 'range' && value !== undefined) el.value = value;
+            if (el.type === 'color' && value !== undefined) el.value = value;
+            
+            const eventType = typeof controls[id] === 'object' ? controls[id].event : 'input';
+            const handler = typeof controls[id] === 'object' ? controls[id].handler : controls[id];
+            el.addEventListener(eventType, e => handler(e.target.value));
+        }
+    }
+}
+
+// --- БЛОК ДОПОЛНИТЕЛЬНЫХ ИНСТРУМЕНТОВ РАЗРАБОТКИ ---
+const gui = new lil.GUI(); 
+gui.hide(); 
+window.addEventListener('keydown', (e) => { 
+    if (e.key.toLowerCase() === 'd') gui.show(gui._hidden); 
+});
+</script>
 </body>
 </html>
