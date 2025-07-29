@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoPlus - Interactive Drone</title>
+    
+    <!-- Подключение библиотек Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- ====================================================================================== -->
+<!-- БЛОК 1: CSS-СТИЛИ (Адаптированные) -->
+<!-- ====================================================================================== -->
+<style>
+    * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+    }
+
+    :root { 
+        --primary-color: #00FF47; 
+        --dark-bg: #000; 
+        --card-bg: rgba(0, 59, 17, 0.5); 
+    }
+
+    /* Делаем тело контейнером для центрирования */
+    body { 
+        background-color: var(--dark-bg); 
+        overflow: hidden; /* Убираем скролл */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 15px; /* Небольшой отступ от краев на мобильных */
+    }
+
+    /* Стили для рамки */
+    .hero { 
+        padding: 20px; /* Внутренний отступ рамки */
+        background-color: var(--card-bg); 
+        border-radius: 20px; 
+        position: relative; 
+        overflow: hidden; 
+        box-shadow: 0 8px 32px rgba(0, 59, 17, 0.3);
+    }
+    
+    /* Эффект свечения для рамки */
+    .hero::before { 
+        content: ''; 
+        position: absolute; 
+        top: -50%; 
+        left: -50%; 
+        width: 200%; 
+        height: 200%; 
+        background: radial-gradient(circle, rgba(0, 255, 71, 0.1) 0%, rgba(0, 0, 0, 0) 70%); 
+        z-index: 0; 
+    }
+
+    /* Стили для контейнера с дроном (теперь он адаптивный) */
+    .robot-img { 
+        /* Занимает почти всю доступную ширину/высоту, но не более 450px */
+        width: 90vw;
+        height: 80vh;
+        max-width: 450px;
+        max-height: 450px;
+        
+        cursor: grab; 
+        border-radius: 15px; 
+        overflow: hidden; 
+        position: relative; 
+        z-index: 1; /* Чтобы был над свечением */
+    }
+</style>
+<!-- ====================================================================================== -->
+<!-- КОНЕЦ БЛОКА 1 -->
+<!-- ====================================================================================== -->
+</head>
+<body>
+
+<!-- ====================================================================================== -->
+<!-- БЛОК 2: HTML-СТРУКТУРА (Минималистичная) -->
+<!-- ====================================================================================== -->
+
+<section class="hero">
+    <div class="robot-img" id="robot-container"></div>
+</section>
+
+<!-- ====================================================================================== -->
+<!-- КОНЕЦ БЛОКА 2 -->
+<!-- ====================================================================================== -->
+
+
+<!-- ====================================================================================== -->
+<!-- БЛОК 3: JAVASCRIPT ДЛЯ 3D-МОДЕЛИ (Финальная версия) -->
+<!-- ====================================================================================== -->
+<script>
+    // 1. Инициализация
+    const container = document.getElementById('robot-container');
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #00FF47; font-size: 18px; z-index: 2;';
+    container.appendChild(loadingIndicator);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
+
+    // 2. Освещение
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight1.position.set(5, 10, 5);
+    scene.add(directionalLight1);
+    const directionalLight2 = new THREE.DirectionalLight(0x00ff47, 0.8);
+    directionalLight2.position.set(-5, 5, -5);
+    scene.add(directionalLight2);
+
+    // 3. Загрузка модели
+    let model;
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        // ИСПРАВЛЕНО: Возвращаем локальный путь к модели
+        'model.glb',
+        (gltf) => {
+            loadingIndicator.style.display = 'none';
+            model = gltf.scene;
+            model.scale.set(9.0, 9.0, 9.0);
+            model.position.set(0, 0, 0);
+            model.quaternion.identity(); 
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.emissive = new THREE.Color(0x001a0a);
+                    child.material.emissiveIntensity = 0.1;
+                }
+            });
+            scene.add(model);
+            setupLevitationEffect();
+        },
+        (progress) => {
+            const percent = progress.total > 0 ? Math.round((progress.loaded / progress.total) * 100) : 0;
+            loadingIndicator.textContent = `Loading ${percent}%`;
+        },
+        (error) => {
+            console.error('An error happened while loading the model:', error);
+            loadingIndicator.innerHTML = `<div style="color: #ff4444;">Ошибка загрузки</div>`;
+        }
+    );
+
+    // 4. Настройка камеры
+    camera.position.set(0, 0, 6);
+    camera.lookAt(0, 0, 0);
+
+    // 5. Переменные для управления и анимации
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    const initialYPosition = 0;
+    const clock = new THREE.Clock();
+    
+    let angularVelocity = new THREE.Vector2(0, 0);
+    let lastDeltaMove = { x: 0, y: 0 };
+    const homeQuaternion = new THREE.Quaternion();
+    let isReturningHome = false;
+    
+    let effectState = 'ACTIVE';
+    let fadeStartTime = 0;
+    let returnHomeTimeout = null;
+        
+    let levitationRings = [];
+    const NUM_RINGS = 3;
+    const CASCADE_DELAY = 0.15;
+    const LEVITATION_TOP = -1.0;
+    const LEVITATION_BOTTOM = -2.0;
+    const LEVITATION_SPEED = 0.5;
+
+    function updateRingVisuals(ring, levitationHeight) {
+        let progress = (ring.position.y - LEVITATION_BOTTOM) / levitationHeight;
+        progress = Math.max(0, Math.min(1, progress));
+        const scale = 0.7 + (1 - progress) * 0.5;
+        ring.scale.set(scale, scale, scale);
+
+        let targetOpacity = ring.material.opacity;
+        let targetIntensity = ring.material.emissiveIntensity;
+        const timeSinceFadeStart = clock.getElapsedTime() - fadeStartTime;
+
+        if (effectState === 'FADING_OUT' && timeSinceFadeStart >= ring.delay) {
+            targetOpacity = 0;
+            targetIntensity = 0;
+        } else if (effectState === 'FADING_IN' && timeSinceFadeStart >= ring.delay) {
+            targetOpacity = progress * 0.7;
+            targetIntensity = progress * 1.5;
+        }
+        
+        ring.material.opacity = THREE.MathUtils.lerp(ring.material.opacity, targetOpacity, 0.1);
+        ring.material.emissiveIntensity = THREE.MathUtils.lerp(ring.material.emissiveIntensity, targetIntensity, 0.1);
+    }
+
+    function setupLevitationEffect() {
+        const levitationHeight = LEVITATION_TOP - LEVITATION_BOTTOM;
+        for (let i = 0; i < NUM_RINGS; i++) {
+            const ringGeometry = new THREE.TorusGeometry(0.9, 0.07, 16, 100);
+            const ringMaterial = new THREE.MeshStandardMaterial({ color: 0x00FF47, emissive: 0x00FF47, emissiveIntensity: 1.0, transparent: true, opacity: 1.0 });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = LEVITATION_TOP - (i * (levitationHeight / NUM_RINGS));
+            ring.delay = (NUM_RINGS - 1 - i) * CASCADE_DELAY; 
+            scene.add(ring);
+            levitationRings.push(ring);
+            updateRingVisuals(ring, levitationHeight);
+        }
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        const deltaTime = clock.getDelta();
+        
+        if (model) {
+            model.position.y = initialYPosition + Math.sin(clock.getElapsedTime() * 1.2) * 0.2;
+            
+            if (!isDragging && (Math.abs(angularVelocity.x) > 0.0001 || Math.abs(angularVelocity.y) > 0.0001)) {
+                const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(angularVelocity.x * deltaTime, angularVelocity.y * deltaTime, 0, 'XYZ'));
+                model.quaternion.multiplyQuaternions(deltaRotationQuaternion, model.quaternion);
+                angularVelocity.multiplyScalar(Math.pow(0.95, deltaTime * 60));
+            } else if (isReturningHome) {
+                model.quaternion.slerp(homeQuaternion, 0.05);
+                if (model.quaternion.angleTo(homeQuaternion) < 0.01) {
+                    isReturningHome = false;
+                    model.quaternion.copy(homeQuaternion);
+                    effectState = 'FADING_IN';
+                    fadeStartTime = clock.getElapsedTime();
+                }
+            }
+        }
+        
+        const levitationHeight = LEVITATION_TOP - LEVITATION_BOTTOM;
+        levitationRings.forEach(ring => {
+            ring.position.y -= LEVITATION_SPEED * deltaTime;
+            if (ring.position.y < LEVITATION_BOTTOM) {
+                ring.position.y += levitationHeight;
+            }
+            updateRingVisuals(ring, levitationHeight);
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    function onPointerDown(e) {
+        isDragging = true;
+        isReturningHome = false;
+        angularVelocity.set(0, 0);
+        effectState = 'FADING_OUT';
+        fadeStartTime = clock.getElapsedTime();
+        clearTimeout(returnHomeTimeout);
+        container.style.cursor = 'grabbing';
+        const x = e.clientX || e.touches[0].clientX;
+        const y = e.clientY || e.touches[0].clientY;
+        previousMousePosition = { x: x, y: y };
+        lastDeltaMove = { x: 0, y: 0 };
+    }
+
+    function onPointerUp() {
+        isDragging = false;
+        container.style.cursor = 'grab';
+        angularVelocity.x = lastDeltaMove.y * 1.5;
+        angularVelocity.y = lastDeltaMove.x * 1.5;
+        clearTimeout(returnHomeTimeout);
+        returnHomeTimeout = setTimeout(() => { isReturningHome = true; }, 2000);
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging || !model) return;
+        const x = e.clientX || e.touches[0].clientX;
+        const y = e.clientY || e.touches[0].clientY;
+        const deltaMove = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
+        
+        const deltaRotationQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(deltaMove.y * 0.01, deltaMove.x * 0.01, 0, 'XYZ'));
+        model.quaternion.multiplyQuaternions(deltaRotationQuaternion, model.quaternion);
+        previousMousePosition = { x: x, y: y };
+        lastDeltaMove = deltaMove;
+    }
+
+    container.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('mousemove', onPointerMove);
+    container.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e); }, { passive: false });
+    window.addEventListener('touchend', onPointerUp);
+    window.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+    container.addEventListener('mouseenter', () => { if (model) model.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 0.2; }); });
+    container.addEventListener('mouseleave', () => { if (model) model.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 0.1; }); });
+</script>
+<!-- ====================================================================================== -->
+<!-- КОНЕЦ БЛОКА 3 -->
+<!-- ====================================================================================== -->
+
+</body>
+</html>
