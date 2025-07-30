@@ -51,40 +51,77 @@
     .setting-control { margin-bottom: 10px; }
     .setting-control label { display: block; font-size: 13px; margin-bottom: 8px; opacity: 0.8; }
     input[type="range"] {
-        -webkit-appearance: none; width: 100%; height: 4px; background: rgba(0, 255, 71, 0.2);
-        border-radius: 2px; cursor: pointer; outline: none;
+        -webkit-appearance: none; appearance: none;
+        width: 100%; height: 6px; background: rgba(0, 255, 71, 0.2);
+        border-radius: 3px; cursor: pointer; outline: none; padding: 0; margin: 10px 0;
     }
     input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary-color);
+        -webkit-appearance: none; appearance: none;
+        width: 18px; height: 18px; background: var(--primary-color);
+        border-radius: 50%; border: 2px solid var(--dark-color);
+    }
+    input[type="range"]::-moz-range-thumb { /* Для Firefox */
+        width: 18px; height: 18px; background: var(--primary-color);
         border-radius: 50%; border: 2px solid var(--dark-color);
     }
     input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
     .lil-gui.root { z-index: 101; }
 
-    /* --- БЛОК АДАПТАЦИИ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА --- */
-    @media (max-width: 600px) {
+    /* --- НОВЫЙ БЛОК АДАПТАЦИИ ПОД ТЕЛЕФОНЫ И ПЛАНШЕТЫ (до 768px) --- */
+    @media (max-width: 768px) {
+        #settings-toggle {
+            width: 55px; height: 55px;
+            bottom: 20px; right: 20px;
+        }
         #settings-panel {
+            width: 95vw; /* Занимаем почти всю ширину */
+            max-height: 80vh; /* Ограничиваем высоту, чтобы панель не вылезала за экран */
+            overflow-y: auto; /* Включаем вертикальную прокрутку, если контент не помещается */
+            -webkit-overflow-scrolling: touch; /* Включаем плавную "инерционную" прокрутку на iOS */
+            padding: 20px 15px;
+        }
+
+        /* Делаем красивый кастомный скроллбар, который не мешает */
+        #settings-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        #settings-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #settings-panel::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+            border: 1px solid var(--dark-color);
+        }
+
+        .setting-card {
             padding: 20px;
-            /* Делаем панель прокручиваемой, если она выше экрана */
-            max-height: 85vh;
-            overflow-y: auto;
         }
         .setting-control label {
-            font-size: 14px; /* Чуть крупнее шрифт для меток */
+            font-size: 15px; /* Увеличиваем шрифт для читаемости */
         }
+        
+        /* ГЛАВНОЕ: делаем ползунки удобными для пальцев */
         input[type="range"] {
-             height: 6px; /* Делаем трек ползунка толще */
+            height: 10px; /* Увеличиваем толщину полосы */
+            border-radius: 5px;
+            margin: 15px 0; /* Добавляем вертикальные отступы */
         }
         input[type="range"]::-webkit-slider-thumb {
-            /* Значительно увеличиваем размер "хвата" для удобства на тач-скринах */
-            width: 24px;
-            height: 24px;
+            width: 30px; /* Значительно увеличиваем размер самого ползунка */
+            height: 30px;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
         }
     }
+
 </style>
 </head>
 <body>
 
+<!-- HTML остается без изменений, кроме одного слайдера, который мы уже добавили -->
 <section class="hero"><div class="robot-img" id="robot-container"></div></section>
 
 <button id="settings-toggle"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.69-1.62-0.92L14.4,2.23c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,4.65C8.63,4.88,8.1,5.19,7.6,5.57L5.22,4.61C5,4.54,4.75,4.61,4.62,4.83L2.71,8.15 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.8,11.06,4.78,11.37,4.78,11.69c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.69,1.62,0.92L9.6,21.77 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.42c0.59-0.23,1.12-0.54,1.62-0.92l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></button>
@@ -98,7 +135,6 @@
         <div class="setting-card"><h3>Кольца</h3>
             <div class="setting-control"><label for="ringCount">Количество</label><input type="range" id="ringCount" min="1" max="10" step="1"></div>
             <div class="setting-control"><label for="ringSpeed">Скорость</label><input type="range" id="ringSpeed" min="0.1" max="2" step="0.1"></div>
-            <!-- === НОВЫЙ СЛАЙДЕР ДЛЯ СКОРОСТИ ЗАТУХАНИЯ === -->
             <div class="setting-control"><label for="ringFadeSpeed">Скорость появления/затухания</label><input type="range" id="ringFadeSpeed" min="0.5" max="5" step="0.1"></div>
             <div class="setting-control"><label for="ringFadeInDelay">Задержка появления (мс)</label><input type="range" id="ringFadeInDelay" min="0" max="5000" step="100"></div>
             <div class="setting-control"><label for="ringColor">Цвет</label><input type="color" id="ringColor"></div>
@@ -107,6 +143,8 @@
 </div>
 
 <script>
+// Весь JavaScript остается таким же, как в прошлый раз.
+// Он уже идеально настроен, и все изменения мы сделали в CSS.
 // --- БЛОК КОНФИГУРАЦИИ ---
 const CONFIG = {
     robotScale: 8.5, 
@@ -367,7 +405,6 @@ function bindUiControls() {
         }
     };
     
-    // Эта функция остается без изменений, она универсальна и подхватит новые контролы
     const initControlValue = (id, controlDef) => {
         const el = document.getElementById(id);
         if (!el) return;
