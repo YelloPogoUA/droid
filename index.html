@@ -52,7 +52,7 @@
     .setting-control label { display: block; font-size: 13px; margin-bottom: 8px; opacity: 0.8; }
     input[type="range"] {
         -webkit-appearance: none; width: 100%; height: 4px; background: rgba(0, 255, 71, 0.2);
-        border-radius: 2px; cursor: pointer;
+        border-radius: 2px; cursor: pointer; outline: none;
     }
     input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary-color);
@@ -61,29 +61,24 @@
     input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
     .lil-gui.root { z-index: 101; }
 
-    /* --- Адаптация для мобильных устройств --- */
-    @media (max-width: 768px) {
-        #settings-panel.active {
-            /* Убираем центрирование, прижимаем к верху */
-            top: 20px;
-            left: 5vw;
-            right: 5vw;
-            width: auto; /* Ширина теперь определяется отступами left/right */
-            transform: translate(0, 0) scale(1); /* Сбрасываем transform для активного состояния */
-
-            /* Добавляем ограничение по высоте и прокрутку */
-            max-height: calc(100vh - 40px); /* 20px отступ сверху и 20px снизу */
-            overflow-y: auto; /* Включаем вертикальную прокрутку, если нужно */
-        }
-        
+    /* --- БЛОК АДАПТАЦИИ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА --- */
+    @media (max-width: 600px) {
         #settings-panel {
-            /* Применяем сброс transform и для неактивного состояния, чтобы анимация была плавной */
-             transform: translate(0, -20px) scale(0.95);
+            padding: 20px;
+            /* Делаем панель прокручиваемой, если она выше экрана */
+            max-height: 85vh;
+            overflow-y: auto;
         }
-
-        /* Уменьшим паддинг, чтобы было больше места */
-        #settings-panel {
-            padding: 20px 15px;
+        .setting-control label {
+            font-size: 14px; /* Чуть крупнее шрифт для меток */
+        }
+        input[type="range"] {
+             height: 6px; /* Делаем трек ползунка толще */
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            /* Значительно увеличиваем размер "хвата" для удобства на тач-скринах */
+            width: 24px;
+            height: 24px;
         }
     }
 </style>
@@ -100,7 +95,14 @@
         <div class="setting-card"><h3>Физика вращения</h3><div class="setting-control"><label for="dragSensitivity">Чувствительность</label><input type="range" id="dragSensitivity" min="0.005" max="0.05" step="0.001"></div><div class="setting-control"><label for="inertiaMultiplier">Множитель инерции (тяжесть)</label><input type="range" id="inertiaMultiplier" min="0.01" max="1" step="0.01"></div><div class="setting-control"><label for="inertiaDamping">Затухание</label><input type="range" id="inertiaDamping" min="0.8" max="0.99" step="0.01"></div></div>
         <div class="setting-card"><h3>Левитация</h3><div class="setting-control"><label for="levitationAmplitude">Амплитуда</label><input type="range" id="levitationAmplitude" min="0" max="0.5" step="0.01"></div><div class="setting-control"><label for="levitationSpeed">Скорость</label><input type="range" id="levitationSpeed" min="0" max="3" step="0.1"></div></div>
         <div class="setting-card"><h3>Внешний вид</h3><div class="setting-control"><label for="robotScale">Масштаб</label><input type="range" id="robotScale" min="1" max="15" step="0.1"></div><div class="setting-control"><label for="mainLight">Основной свет</label><input type="range" id="mainLight" min="0" max="3" step="0.1"></div><div class="setting-control"><label for="accentLight">Акцентный свет</label><input type="range" id="accentLight" min="0" max="3" step="0.1"></div><div class="setting-control"><label for="accentLightColor">Цвет акцента</label><input type="color" id="accentLightColor"></div></div>
-        <div class="setting-card"><h3>Кольца</h3><div class="setting-control"><label for="ringCount">Количество</label><input type="range" id="ringCount" min="1" max="10" step="1"></div><div class="setting-control"><label for="ringSpeed">Скорость</label><input type="range" id="ringSpeed" min="0.1" max="2" step="0.1"></div><div class="setting-control"><label for="ringColor">Цвет</label><input type="color" id="ringColor"></div></div>
+        <div class="setting-card"><h3>Кольца</h3>
+            <div class="setting-control"><label for="ringCount">Количество</label><input type="range" id="ringCount" min="1" max="10" step="1"></div>
+            <div class="setting-control"><label for="ringSpeed">Скорость</label><input type="range" id="ringSpeed" min="0.1" max="2" step="0.1"></div>
+            <!-- === НОВЫЙ СЛАЙДЕР ДЛЯ СКОРОСТИ ЗАТУХАНИЯ === -->
+            <div class="setting-control"><label for="ringFadeSpeed">Скорость появления/затухания</label><input type="range" id="ringFadeSpeed" min="0.5" max="5" step="0.1"></div>
+            <div class="setting-control"><label for="ringFadeInDelay">Задержка появления (мс)</label><input type="range" id="ringFadeInDelay" min="0" max="5000" step="100"></div>
+            <div class="setting-control"><label for="ringColor">Цвет</label><input type="color" id="ringColor"></div>
+        </div>
     </div>
 </div>
 
@@ -110,11 +112,12 @@ const CONFIG = {
     robotScale: 8.5, 
     followSpeed: 0.05, 
     maxFollowAngle: 0.7, 
+    
     dragRotationSpeed: 0.007,
     inertiaMultiplier: 0.4,
     inertiaDamping: 0.98,
+    
     velocityThreshold: 0.0001,
-    returnHomeDelay: 2000, 
     levitationAmplitude: 0.15, 
     levitationSpeed: 1.2,
     baseEmissive: 0.1, 
@@ -127,6 +130,8 @@ const CONFIG = {
         numRings: 3, 
         color: '#00ff47', 
         speed: 0.5, 
+        fadeSpeed: 2.0,
+        fadeInDelay: 1000,
         topY: -1.0, 
         bottomY: -2.0, 
         baseOpacity: 0.7, 
@@ -157,10 +162,11 @@ scene.add(accentLight);
 let model, levitationRings = [];
 const clock = new THREE.Clock();
 const homeQuaternion = new THREE.Quaternion(), targetQuaternion = new THREE.Quaternion();
-let isDragging = false, isMouseOver = false, isReturningHome = false;
-let returnHomeTimeout = null;
+let isDragging = false, isMouseOver = false;
 let angularVelocity = new THREE.Vector2(0, 0);
 let previousMousePosition = { x: 0, y: 0 };
+let ringsOpacityMultiplier = 1.; 
+let inactiveStartTime = null;
 
 // --- БЛОК ЗАГРУЗКИ МОДЕЛИ ---
 const loader = new THREE.GLTFLoader();
@@ -186,7 +192,7 @@ function setupLevitationRings() {
     levitationRings = [];
     const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
     for (let i = 0; i < CONFIG.rings.numRings; i++) {
-        const ringGeometry = new THREE.TorusGeometry(1.0, 0.05, 16, 100);
+        const ringGeometry = new THREE.TorusGeometry(0.9, 0.07, 16, 100);
         const ringMaterial = new THREE.MeshStandardMaterial({ 
             color: CONFIG.rings.color, 
             emissive: CONFIG.rings.color, 
@@ -209,16 +215,9 @@ function animate() {
     const deltaTime = clock.getDelta(), elapsedTime = clock.getElapsedTime();
     
     if (model) {
-        // Анимация левитации
         model.position.y = Math.sin(elapsedTime * CONFIG.levitationSpeed) * CONFIG.levitationAmplitude;
         
-        // Логика вращения и следования
-        if (!isDragging && !isReturningHome && angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
-            model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed);
-        } else if (isReturningHome) {
-            model.quaternion.slerp(homeQuaternion, 0.05);
-            if(model.quaternion.angleTo(homeQuaternion) < 0.01) isReturningHome = false;
-        } else if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) {
+        if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) {
             const deltaRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(
                 angularVelocity.y * deltaTime * CONFIG.inertiaMultiplier, 
                 angularVelocity.x * deltaTime * CONFIG.inertiaMultiplier, 
@@ -226,24 +225,38 @@ function animate() {
             ));
             model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
             angularVelocity.multiplyScalar(CONFIG.inertiaDamping);
-            if (angularVelocity.lengthSq() < CONFIG.velocityThreshold) {
-                angularVelocity.set(0, 0);
-            }
+        } else {
+            angularVelocity.set(0, 0);
+            model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed);
         }
     }
     
-    // ИСПРАВЛЕННАЯ АНИМАЦИЯ КОЛЕЦ
+    const isInteractionActive = isDragging || angularVelocity.lengthSq() > CONFIG.velocityThreshold;
+    
+    if (isInteractionActive) {
+        ringsOpacityMultiplier = Math.max(0, ringsOpacityMultiplier - CONFIG.rings.fadeSpeed * deltaTime);
+        inactiveStartTime = null; 
+    } else {
+        if (inactiveStartTime === null) {
+            inactiveStartTime = elapsedTime;
+        }
+
+        const delayInSeconds = CONFIG.rings.fadeInDelay / 1000;
+        if (elapsedTime - inactiveStartTime >= delayInSeconds) {
+            ringsOpacityMultiplier = Math.min(1, ringsOpacityMultiplier + CONFIG.rings.fadeSpeed * deltaTime);
+        }
+    }
+    
     const levitationHeight = CONFIG.rings.topY - CONFIG.rings.bottomY;
     levitationRings.forEach(ring => {
         ring.position.y -= CONFIG.rings.speed * deltaTime;
-        if (ring.position.y < CONFIG.rings.bottomY) {
-            ring.position.y += levitationHeight;
-        }
+        if (ring.position.y < CONFIG.rings.bottomY) ring.position.y += levitationHeight;
         let progress = (ring.position.y - CONFIG.rings.bottomY) / levitationHeight;
-        progress = Math.max(0, Math.min(1, progress));
-        ring.material.opacity = progress * CONFIG.rings.baseOpacity;
-        ring.material.emissiveIntensity = progress * CONFIG.rings.baseIntensity;
-        const scale = 0.7 + progress * 0.3;
+        
+        ring.material.opacity = progress * CONFIG.rings.baseOpacity * ringsOpacityMultiplier;
+        ring.material.emissiveIntensity = progress * CONFIG.rings.baseIntensity * ringsOpacityMultiplier;
+        
+        const scale = 0.7 + (1 - progress) * 0.5;
         ring.scale.set(scale, scale, scale);
     });
     
@@ -254,8 +267,6 @@ animate();
 // --- БЛОК ОБРАБОТЧИКОВ СОБЫТИЙ ВЗАИМОДЕЙСТВИЯ ---
 function onPointerDown(e) { 
     isDragging = true; 
-    isReturningHome = false; 
-    clearTimeout(returnHomeTimeout); 
     angularVelocity.set(0, 0); 
     container.style.cursor = 'grabbing'; 
     previousMousePosition = { 
@@ -267,31 +278,27 @@ function onPointerDown(e) {
 function onPointerUp() { 
     isDragging = false; 
     container.style.cursor = 'grab'; 
-    returnHomeTimeout = setTimeout(() => { 
-        isReturningHome = true; 
-    }, CONFIG.returnHomeDelay); 
 }
 
 function onPointerMove(e) {
     if (!model) return;
+    
     const x = e.clientX || e.touches?.[0].clientX; 
     const y = e.clientY || e.touches?.[0].clientY;
     
     if (isDragging) {
         const deltaMove = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
-        const deltaRotation = new THREE.Quaternion().setFromEuler(
-            new THREE.Euler(deltaMove.y * CONFIG.dragRotationSpeed, deltaMove.x * CONFIG.dragRotationSpeed, 0, 'XYZ')
-        );
+        const deltaRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(
+            deltaMove.y * CONFIG.dragRotationSpeed, deltaMove.x * CONFIG.dragRotationSpeed, 0, 'XYZ'
+        ));
         model.quaternion.multiplyQuaternions(deltaRotation, model.quaternion);
         angularVelocity.set(deltaMove.x, deltaMove.y);
         previousMousePosition = { x, y };
     } else if (isMouseOver) {
         const rect = container.getBoundingClientRect();
         const mouseX = ((x - rect.left) / rect.width) * 2 - 1;
-        const mouseY = ((y - rect.top) / rect.height) * 2 - 1;
-        targetQuaternion.setFromEuler(
-            new THREE.Euler( -mouseY * CONFIG.maxFollowAngle, mouseX * CONFIG.maxFollowAngle, 0, 'XYZ')
-        );
+        const mouseY = (((y - rect.top) / rect.height) * 2 - 1); 
+        targetQuaternion.setFromEuler(new THREE.Euler(mouseY * CONFIG.maxFollowAngle, mouseX * CONFIG.maxFollowAngle, 0, 'XYZ'));
     }
 }
 
@@ -304,13 +311,11 @@ window.addEventListener('touchend', onPointerUp);
 window.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
 container.addEventListener('mouseenter', () => { 
     isMouseOver = true; 
-    clearTimeout(returnHomeTimeout); 
     if (model) model.traverse(c => { if(c.isMesh) c.material.emissiveIntensity = CONFIG.hoverEmissive; }); 
 });
 container.addEventListener('mouseleave', () => { 
     isMouseOver = false; 
     targetQuaternion.copy(homeQuaternion); 
-    returnHomeTimeout = setTimeout(() => { isReturningHome = true; }, CONFIG.returnHomeDelay); 
     if (model) model.traverse(c => { if(c.isMesh) c.material.emissiveIntensity = CONFIG.baseEmissive; }); 
 });
 
@@ -324,9 +329,7 @@ window.addEventListener('resize', () => {
 // --- БЛОК УПРАВЛЕНИЯ ПАНЕЛЬЮ НАСТРОЕК ---
 const settingsToggle = document.getElementById('settings-toggle');
 const settingsPanel = document.getElementById('settings-panel');
-settingsToggle.addEventListener('click', () => { 
-    settingsPanel.classList.toggle('active'); 
-});
+settingsToggle.addEventListener('click', () => { settingsPanel.classList.toggle('active'); });
 
 // --- БЛОК ПРИВЯЗКИ ЭЛЕМЕНТОВ УПРАВЛЕНИЯ UI ---
 function bindUiControls() {
@@ -338,33 +341,63 @@ function bindUiControls() {
         'inertiaDamping': (v) => CONFIG.inertiaDamping = parseFloat(v),
         'levitationAmplitude': (v) => CONFIG.levitationAmplitude = parseFloat(v), 
         'levitationSpeed': (v) => CONFIG.levitationSpeed = parseFloat(v),
-        'robotScale': (v) => { CONFIG.robotScale = parseFloat(v); model?.scale.set(v, v, v); },
+        'robotScale': (v) => { 
+            CONFIG.robotScale = parseFloat(v); 
+            model?.scale.set(v, v, v); 
+        },
         'mainLight': (v) => mainLight.intensity = parseFloat(v), 
         'accentLight': (v) => accentLight.intensity = parseFloat(v),
         'accentLightColor': (v) => accentLight.color.set(v),
-        'ringCount': { event: 'change', handler: (v) => { CONFIG.rings.numRings = parseInt(v); setupLevitationRings(); } },
+        'ringCount': { 
+            event: 'change', 
+            handler: (v) => { 
+                CONFIG.rings.numRings = parseInt(v); 
+                setupLevitationRings(); 
+            } 
+        },
         'ringSpeed': (v) => CONFIG.rings.speed = parseFloat(v),
+        'ringFadeSpeed': (v) => CONFIG.rings.fadeSpeed = parseFloat(v),
+        'ringFadeInDelay': (v) => CONFIG.rings.fadeInDelay = parseInt(v),
         'ringColor': (v) => { 
             CONFIG.rings.color = v; 
-            levitationRings.forEach(r => { r.material.color.set(v); r.material.emissive.set(v); }); 
+            levitationRings.forEach(r => { 
+                r.material.color.set(v); 
+                r.material.emissive.set(v); 
+            }); 
         }
+    };
+    
+    // Эта функция остается без изменений, она универсальна и подхватит новые контролы
+    const initControlValue = (id, controlDef) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        let value;
+        if (id.startsWith('ring')) {
+            const key = id.charAt(4).toLowerCase() + id.slice(5);
+            value = CONFIG.rings[key];
+        } else if (id === 'dragSensitivity') {
+            value = CONFIG.dragRotationSpeed;
+        } else {
+            value = CONFIG[id];
+        }
+        
+        if (el.type === 'range' && value !== undefined) el.value = value;
+        if (el.type === 'color' && value !== undefined) el.value = value;
     };
     
     for (const id in controls) {
         const el = document.getElementById(id);
         if (el) {
-            let value;
-            if (id.startsWith('ring')) { value = CONFIG.rings[id.replace('ring', '').toLowerCase()]; }
-            else if (id === 'dragSensitivity') { value = CONFIG.dragRotationSpeed; }
-            else { value = CONFIG[id]; }
-            if (el.type === 'range' && value !== undefined) el.value = value;
-            if (el.type === 'color' && value !== undefined) el.value = value;
+            initControlValue(id, controls[id]);
+            
             const eventType = typeof controls[id] === 'object' ? controls[id].event : 'input';
             const handler = typeof controls[id] === 'object' ? controls[id].handler : controls[id];
             el.addEventListener(eventType, e => handler(e.target.value));
         }
     }
 }
+
 
 // --- БЛОК ДОПОЛНИТЕЛЬНЫХ ИНСТРУМЕНТОВ РАЗРАБОТКИ ---
 const gui = new lil.GUI(); 
