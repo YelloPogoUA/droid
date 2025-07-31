@@ -1159,13 +1159,14 @@ class AICommandProcessor {
        async processWithGemini(text) {
         try {
             // Используем ПОЛНЫЙ АДРЕС сервера на Railway
-            const response = await fetch('https://droid-production-3cef.up.railway.app/api/gemini', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: text })
-            });
+// ЗАМЕНИТЕ ВСЮ СТРОЧКУ FETCH НА ЭТУ:
+const response = await fetch('https://droid-production-f73e.up.railway.app/api/gemini', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text: text })
+});
 
             // ЧИТАЕМ ОТВЕТ ТОЛЬКО ОДИН РАЗ
             const data = await response.json();
