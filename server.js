@@ -1,20 +1,31 @@
-// server.js (ФИНАЛЬНАЯ ВЕРСИЯ ДЛЯ CEREBRAS, ГОТОВАЯ К ХОСТИНГУ)
+// server.js (ФИНАЛЬНАЯ ВЕРСИЯ С РУЧНОЙ НАСТРОЙКОЙ CORS)
 
 const express = require('express');
-const cors = require('cors'); // Добавляем cors
+// const cors = require('cors'); // <-- БИБЛИОТЕКА CORS БОЛЬШЕ НЕ НУЖНА
 const { Cerebras } = require('@cerebras/cerebras_cloud_sdk');
 const app = express();
-const port = process.env.PORT || 3000; // Railway использует переменную PORT
+const port = process.env.PORT || 3000;
 
-// БЕРЕМ КЛЮЧ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ RAILWAY
 const CEREBRAS_API_KEY = process.env.cerebras_api_key; 
-// ^^^ Имя 'cerebras_api_key' должно в точности совпадать с тем, что вы указали на Railway
-
-// Инициализируем клиент Cerebras с ключом из переменных окружения
-// Добавляем проверку, чтобы клиент не создавался без ключа
 const cerebras = CEREBRAS_API_KEY ? new Cerebras({ apiKey: CEREBRAS_API_KEY }) : null;
 
-app.use(cors()); // РАЗРЕШАЕМ ЗАПРОСЫ С ДРУГИХ САЙТОВ
+// ===================================================================
+// РУЧНАЯ НАСТРОЙКА CORS - ЭТО РЕШИТ ПРОБЛЕМУ
+// ===================================================================
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Разрешаем доступ с любого домена
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Отвечаем на "проверочные" запросы (preflight)
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    
+    next();
+});
+// ===================================================================
+
 app.use(express.json());
 
 app.post('/api/gemini', async (req, res) => {
@@ -30,14 +41,8 @@ app.post('/api/gemini', async (req, res) => {
     try {
         const completion = await cerebras.chat.completions.create({
             messages: [
-                {
-                    role: 'system',
-                    content: 'Ты AI-ассистент дрона. Ответь кратко и по-дружески.'
-                },
-                {
-                    role: 'user',
-                    content: userText
-                }
+                { role: 'system', content: 'Ты AI-ассистент дрона. Ответь кратко и по-дружески.' },
+                { role: 'user', content: userText }
             ],
             model: 'qwen-3-235b-a22b-instruct-2507',
             stream: false,
@@ -48,18 +53,4 @@ app.post('/api/gemini', async (req, res) => {
         const aiResponseText = completion.choices[0].message.content.trim();
         
         const clientResponse = {
-            candidates: [{ content: { parts: [{ text: aiResponseText }] } }]
-        };
-        
-        res.json(clientResponse);
-
-    } catch (error) {
-        console.error('Ошибка на сервере при обращении к Cerebras:', error);
-        const errorMessage = error.response?.data?.detail || error.message || 'Неизвестная ошибка API';
-        res.status(500).json({ error: `Ошибка API Cerebras: ${errorMessage}` });
-    }
-});
-
-app.listen(port, () => {
-    console.log(`Сервер запущен на порту ${port} (режим Cerebras)`);
-});
+            candidates: [{ content: { parts: [{ text: aiResponse...`
