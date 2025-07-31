@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "npm install" 
   },
   "dependencies": {
     "@cerebras/cerebras_cloud_sdk": "^1.35.0",
