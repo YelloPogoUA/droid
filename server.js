@@ -1,7 +1,6 @@
-// server.js (ФИНАЛЬНАЯ ВЕРСИЯ С РУЧНОЙ НАСТРОЙКОЙ CORS)
+// server.js (ФИНАЛЬНАЯ ПОЛНАЯ ВЕРСИЯ С РУЧНОЙ НАСТРОЙКОЙ CORS)
 
 const express = require('express');
-// const cors = require('cors'); // <-- БИБЛИОТЕКА CORS БОЛЬШЕ НЕ НУЖНА
 const { Cerebras } = require('@cerebras/cerebras_cloud_sdk');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -9,22 +8,18 @@ const port = process.env.PORT || 3000;
 const CEREBRAS_API_KEY = process.env.cerebras_api_key; 
 const cerebras = CEREBRAS_API_KEY ? new Cerebras({ apiKey: CEREBRAS_API_KEY }) : null;
 
-// ===================================================================
-// РУЧНАЯ НАСТРОЙКА CORS - ЭТО РЕШИТ ПРОБЛЕМУ
-// ===================================================================
+// Ручная настройка CORS, которая решает проблему
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*'); // Разрешаем доступ с любого домена
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
-    // Отвечаем на "проверочные" запросы (preflight)
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
     
     next();
 });
-// ===================================================================
 
 app.use(express.json());
 
@@ -52,5 +47,20 @@ app.post('/api/gemini', async (req, res) => {
         
         const aiResponseText = completion.choices[0].message.content.trim();
         
+        // Эта часть кода была обрезана
         const clientResponse = {
-            candidates: [{ content: { parts: [{ text: aiResponse...`
+            candidates: [{ content: { parts: [{ text: aiResponseText }] } }]
+        };
+        
+        res.json(clientResponse);
+
+    } catch (error) {
+        console.error('Ошибка на сервере при обращении к Cerebras:', error);
+        const errorMessage = error.response?.data?.detail || error.message || 'Неизвестная ошибка API';
+        res.status(500).json({ error: `Ошибка API Cerebras: ${errorMessage}` });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Сервер запущен на порту ${port} (режим Cerebras)`);
+});

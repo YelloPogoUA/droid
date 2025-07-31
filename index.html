@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.17"></script>
 
 <style>
+    /* ... ВЕСЬ ВАШ CSS ОСТАЕТСЯ ЗДЕСЬ ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root { 
         --primary-color: #00ff47; --dark-color: #0a0f0a; --grid-color: rgba(0, 255, 71, 0.08);
@@ -36,587 +37,80 @@
     }
     @keyframes pan-grid { 0% { background-position: 0 0; } 100% { background-position: 60px 60px; } }
     .robot-img { width: 100%; height: 100%; cursor: grab; position: relative; z-index: 1; }
-    
-    /* Энергетические частицы */
-    .energy-particles {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1;
-    }
-    
-    .particle {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: var(--primary-color);
-        border-radius: 50%;
-        opacity: 0;
-        box-shadow: 0 0 6px var(--primary-color);
-    }
-    
-    /* Спящий режим */
+    .energy-particles { position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+    .particle { position: absolute; width: 2px; height: 2px; background: var(--primary-color); border-radius: 50%; opacity: 0; box-shadow: 0 0 6px var(--primary-color); }
     .robot-img.sleeping { cursor: pointer; }
-    .robot-img.sleeping::after {
-        content: 'Дважды кликните для активации дрона';
-        position: absolute;
-        bottom: 20%;
-        left: 50%;
-        transform: translateX(-50%);
-        color: rgba(0, 255, 71, 0.5);
-        font-size: 14px;
-        text-align: center;
-        opacity: 0;
-        animation: pulse-hint 4s ease-in-out infinite;
-        padding: 8px 16px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 8px;
-        border: 1px solid rgba(0, 255, 71, 0.2);
-    }
-    
-    .robot-img.passive-waiting::after {
-        content: 'Дрон в режиме ожидания. Активация через двойной клик.';
-        animation: passive-hint 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse-hint {
-        0%, 70%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); }
-        15%, 55% { opacity: 0.8; transform: translateX(-50%) translateY(-5px); }
-    }
-    
-    @keyframes passive-hint {
-        0%, 100% { opacity: 0.4; }
-        50% { opacity: 0.8; }
-    }
-    
-    /* Эффект включения */
-    .boot-sequence {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(0, 255, 71, 0.15) 0%, transparent 60%);
-        opacity: 0;
-        pointer-events: none;
-        z-index: 2;
-    }
-    
-    .boot-sequence.active {
-        animation: boot-pulse 3s ease-out;
-    }
-    
-    @keyframes boot-pulse {
-        0% { opacity: 0; transform: scale(0.3); }
-        15% { opacity: 0.4; transform: scale(0.9); }
-        30% { opacity: 0.7; transform: scale(1.2); }
-        60% { opacity: 0.5; transform: scale(1.1); }
-        100% { opacity: 0; transform: scale(1); }
-    }
-    
-    /* Модальное окно выбора режима */
-    #mode-selection {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.8);
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        padding: 35px;
-        z-index: 200;
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.4s ease;
-        text-align: center;
-        min-width: 320px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    }
-    
-    #mode-selection.show {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translate(-50%, -50%) scale(1);
-    }
-    
-    #mode-selection h2 {
-        color: var(--primary-color);
-        margin-bottom: 20px;
-        font-size: 24px;
-        text-shadow: 0 0 10px rgba(0, 255, 71, 0.3);
-    }
-    
-    #mode-selection p {
-        margin-bottom: 25px;
-        opacity: 0.9;
-        line-height: 1.5;
-    }
-    
-    .mode-buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-    }
-    
-    .mode-btn {
-        padding: 14px 28px;
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        color: #e8f5e8;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 14px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .mode-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(0, 255, 71, 0.2), transparent);
-        transition: left 0.5s ease;
-    }
-    
-    .mode-btn:hover::before {
-        left: 100%;
-    }
-    
-    .mode-btn:hover {
-        background: rgba(0, 255, 71, 0.15);
-        border-color: var(--primary-color);
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 255, 71, 0.2);
-    }
-    
-    .mode-btn.primary {
-        background: rgba(0, 255, 71, 0.2);
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 15px rgba(0, 255, 71, 0.1);
-    }
-    
-    .mode-btn.primary:hover {
-        background: rgba(0, 255, 71, 0.3);
-        box-shadow: 0 8px 30px rgba(0, 255, 71, 0.3);
-    }
-
-    /* Статус пассивного режима */
-    .passive-status {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: 15px;
-        padding: 12px 24px;
-        backdrop-filter: blur(15px);
-        color: var(--primary-color);
-        font-size: 14px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        z-index: 50;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-    
-    .passive-status.show {
-        opacity: 1;
-    }
-
-    /* Панель управления */
-    .control-panel {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        z-index: 100;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-    }
-    
-    .control-panel.active {
-        opacity: 1;
-        pointer-events: auto;
-    }
-    
-    .control-btn {
-        width: 50px;
-        height: 50px;
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        backdrop-filter: blur(15px);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-        color: var(--primary-color);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        position: relative;
-    }
-    
-    .control-btn:hover {
-        background: rgba(0, 255, 71, 0.15);
-        transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(0, 255, 71, 0.2);
-    }
-    
-    .control-btn.active {
-        background: rgba(0, 255, 71, 0.2);
-        border-color: var(--primary-color);
-    }
-    
-    /* Элегантная настройочная панель */
-    #settings-panel {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        width: 320px;
-        max-height: calc(100vh - 40px);
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        padding: 20px;
-        z-index: 99;
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.4s ease;
-        transform: translateX(-100%);
-        overflow: hidden;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-    }
-    
-    #settings-panel.active {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateX(0);
-    }
-    
-    .settings-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid rgba(0, 255, 71, 0.2);
-    }
-    
-    .settings-header h3 {
-        color: var(--primary-color);
-        font-size: 18px;
-        text-shadow: 0 0 8px rgba(0, 255, 71, 0.2);
-    }
-    
-    .close-btn {
-        background: none;
-        border: none;
-        color: var(--primary-color);
-        cursor: pointer;
-        font-size: 20px;
-        opacity: 0.7;
-        transition: opacity 0.3s ease;
-    }
-    
-    .close-btn:hover {
-        opacity: 1;
-    }
-    
-    .settings-content {
-        max-height: calc(100vh - 140px);
-        overflow-y: auto;
-        padding-right: 10px;
-    }
-    
-    .setting-group {
-        margin-bottom: 25px;
-    }
-    
-    .setting-group h4 {
-        color: var(--primary-color);
-        font-size: 14px;
-        margin-bottom: 15px;
-        opacity: 0.9;
-        letter-spacing: 0.5px;
-    }
-    
-    .setting-item {
-        margin-bottom: 15px;
-    }
-    
-    .setting-item label {
-        display: block;
-        font-size: 12px;
-        margin-bottom: 8px;
-        opacity: 0.8;
-        color: #c8e6c8;
-    }
-    
-    .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 24px;
-    }
-    
-    .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.3);
-        transition: .4s;
-        border-radius: 24px;
-        border: 1px solid rgba(0, 255, 71, 0.2);
-    }
-    
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-        background-color: #666;
-        transition: .4s;
-        border-radius: 50%;
-    }
-    
-    input:checked + .slider {
-        background-color: rgba(0, 255, 71, 0.3);
-        border-color: var(--primary-color);
-    }
-    
-    input:checked + .slider:before {
-        transform: translateX(26px);
-        background-color: var(--primary-color);
-        box-shadow: 0 0 10px rgba(0, 255, 71, 0.5);
-    }
-    
-    input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 6px;
-        background: rgba(0, 255, 71, 0.15);
-        border-radius: 3px;
-        cursor: pointer;
-        outline: none;
-        transition: background 0.3s ease;
-    }
-    
-    input[type="range"]:hover {
-        background: rgba(0, 255, 71, 0.25);
-    }
-    
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        background: var(--primary-color);
-        border-radius: 50%;
-        border: 2px solid var(--dark-color);
-        cursor: pointer;
-        box-shadow: 0 0 8px rgba(0, 255, 71, 0.4);
-        transition: all 0.2s ease;
-    }
-    
-    input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-        box-shadow: 0 0 12px rgba(0, 255, 71, 0.6);
-    }
-    
-    input[type="color"] {
-        width: 100%;
-        height: 30px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        border-radius: 6px;
-        border: 1px solid rgba(0, 255, 71, 0.2);
-    }
-    
-    /* AI чат */
-    #ai-chat {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 350px;
-        height: 400px;
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-        padding: 20px;
-        z-index: 98;
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.4s ease;
-        transform: translateY(100%);
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-    }
-    
-    #ai-chat.active {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-    
-    .chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(0, 255, 71, 0.2);
-    }
-    
-    .chat-header h3 {
-        color: var(--primary-color);
-        font-size: 16px;
-    }
-    
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 10px 0;
-        margin-bottom: 15px;
-    }
-    
-    .message {
-        margin-bottom: 10px;
-        padding: 8px 12px;
-        border-radius: 12px;
-        font-size: 13px;
-        line-height: 1.4;
-    }
-    
-    .message.user {
-        background: rgba(0, 255, 71, 0.2);
-        margin-left: 20px;
-        text-align: right;
-    }
-    
-    .message.ai {
-        background: rgba(0, 0, 0, 0.3);
-        margin-right: 20px;
-        border: 1px solid rgba(0, 255, 71, 0.1);
-    }
-    
-    .message.typing {
-        background: rgba(0, 0, 0, 0.2);
-        margin-right: 20px;
-        border: 1px solid rgba(0, 255, 71, 0.1);
-        opacity: 0.7;
-        animation: typing-pulse 1.5s infinite;
-    }
-    
-    @keyframes typing-pulse {
-        0%, 100% { opacity: 0.5; }
-        50% { opacity: 1; }
-    }
-    
-    .chat-input-container {
-        display: flex;
-        gap: 10px;
-    }
-    
-    .chat-input {
-        flex: 1;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(0, 255, 71, 0.2);
-        border-radius: 10px;
-        padding: 8px 12px;
-        color: #e8f5e8;
-        font-size: 13px;
-        outline: none;
-    }
-    
-    .chat-input:focus {
-        border-color: var(--primary-color);
-    }
-    
-    .send-btn {
-        background: rgba(0, 255, 71, 0.2);
-        border: 1px solid var(--primary-color);
-        border-radius: 10px;
-        padding: 8px 12px;
-        color: var(--primary-color);
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .send-btn:hover {
-        background: rgba(0, 255, 71, 0.3);
-    }
-    
-    .send-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    
-    /* Мобильная адаптация */
+    .robot-img.sleeping::after { content: 'Дважды кликните для активации дрона'; position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); color: rgba(0, 255, 71, 0.5); font-size: 14px; text-align: center; opacity: 0; animation: pulse-hint 4s ease-in-out infinite; padding: 8px 16px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(0, 255, 71, 0.2); }
+    .robot-img.passive-waiting::after { content: 'Дрон в режиме ожидания. Активация через двойной клик.'; animation: passive-hint 2s ease-in-out infinite; }
+    @keyframes pulse-hint { 0%, 70%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); } 15%, 55% { opacity: 0.8; transform: translateX(-50%) translateY(-5px); } }
+    @keyframes passive-hint { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    .boot-sequence { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0, 255, 71, 0.15) 0%, transparent 60%); opacity: 0; pointer-events: none; z-index: 2; }
+    .boot-sequence.active { animation: boot-pulse 3s ease-out; }
+    @keyframes boot-pulse { 0% { opacity: 0; transform: scale(0.3); } 15% { opacity: 0.4; transform: scale(0.9); } 30% { opacity: 0.7; transform: scale(1.2); } 60% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1); } }
+    #mode-selection { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; backdrop-filter: blur(20px); padding: 35px; z-index: 200; opacity: 0; pointer-events: none; transition: all 0.4s ease; text-align: center; min-width: 320px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+    #mode-selection.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    #mode-selection h2 { color: var(--primary-color); margin-bottom: 20px; font-size: 24px; text-shadow: 0 0 10px rgba(0, 255, 71, 0.3); }
+    #mode-selection p { margin-bottom: 25px; opacity: 0.9; line-height: 1.5; }
+    .mode-buttons { display: flex; gap: 15px; justify-content: center; }
+    .mode-btn { padding: 14px 28px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); border-radius: 12px; color: #e8f5e8; cursor: pointer; transition: all 0.3s ease; font-size: 14px; position: relative; overflow: hidden; }
+    .mode-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0, 255, 71, 0.2), transparent); transition: left 0.5s ease; }
+    .mode-btn:hover::before { left: 100%; }
+    .mode-btn:hover { background: rgba(0, 255, 71, 0.15); border-color: var(--primary-color); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 255, 71, 0.2); }
+    .mode-btn.primary { background: rgba(0, 255, 71, 0.2); border-color: var(--primary-color); box-shadow: 0 4px 15px rgba(0, 255, 71, 0.1); }
+    .mode-btn.primary:hover { background: rgba(0, 255, 71, 0.3); box-shadow: 0 8px 30px rgba(0, 255, 71, 0.3); }
+    .passive-status { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 15px; padding: 12px 24px; backdrop-filter: blur(15px); color: var(--primary-color); font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 50; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
+    .passive-status.show { opacity: 1; }
+    .control-panel { position: fixed; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .control-panel.active { opacity: 1; pointer-events: auto; }
+    .control-btn { width: 50px; height: 50px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(15px); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; color: var(--primary-color); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); position: relative; }
+    .control-btn:hover { background: rgba(0, 255, 71, 0.15); transform: scale(1.05); box-shadow: 0 6px 20px rgba(0, 255, 71, 0.2); }
+    .control-btn.active { background: rgba(0, 255, 71, 0.2); border-color: var(--primary-color); }
+    #settings-panel { position: fixed; top: 20px; left: 20px; width: 320px; max-height: calc(100vh - 40px); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; backdrop-filter: blur(20px); padding: 20px; z-index: 99; opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: translateX(-100%); overflow: hidden; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3); }
+    #settings-panel.active { opacity: 1; pointer-events: auto; transform: translateX(0); }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(0, 255, 71, 0.2); }
+    .settings-header h3 { color: var(--primary-color); font-size: 18px; text-shadow: 0 0 8px rgba(0, 255, 71, 0.2); }
+    .close-btn { background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 20px; opacity: 0.7; transition: opacity 0.3s ease; }
+    .close-btn:hover { opacity: 1; }
+    .settings-content { max-height: calc(100vh - 140px); overflow-y: auto; padding-right: 10px; }
+    .setting-group { margin-bottom: 25px; }
+    .setting-group h4 { color: var(--primary-color); font-size: 14px; margin-bottom: 15px; opacity: 0.9; letter-spacing: 0.5px; }
+    .setting-item { margin-bottom: 15px; }
+    .setting-item label { display: block; font-size: 12px; margin-bottom: 8px; opacity: 0.8; color: #c8e6c8; }
+    .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.3); transition: .4s; border-radius: 24px; border: 1px solid rgba(0, 255, 71, 0.2); }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #666; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: rgba(0, 255, 71, 0.3); border-color: var(--primary-color); }
+    input:checked + .slider:before { transform: translateX(26px); background-color: var(--primary-color); box-shadow: 0 0 10px rgba(0, 255, 71, 0.5); }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: rgba(0, 255, 71, 0.15); border-radius: 3px; cursor: pointer; outline: none; transition: background 0.3s ease; }
+    input[type="range"]:hover { background: rgba(0, 255, 71, 0.25); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--primary-color); border-radius: 50%; border: 2px solid var(--dark-color); cursor: pointer; box-shadow: 0 0 8px rgba(0, 255, 71, 0.4); transition: all 0.2s ease; }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 0 12px rgba(0, 255, 71, 0.6); }
+    input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; border-radius: 6px; border: 1px solid rgba(0, 255, 71, 0.2); }
+    #ai-chat { position: fixed; bottom: 20px; right: 20px; width: 350px; height: 400px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; backdrop-filter: blur(20px); padding: 20px; z-index: 98; opacity: 0; pointer-events: none; transition: all 0.4s ease; transform: translateY(100%); display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3); }
+    #ai-chat.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .chat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 255, 71, 0.2); }
+    .chat-header h3 { color: var(--primary-color); font-size: 16px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 10px 0; margin-bottom: 15px; }
+    .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+    .message.user { background: rgba(0, 255, 71, 0.2); margin-left: 20px; text-align: right; }
+    .message.ai { background: rgba(0, 0, 0, 0.3); margin-right: 20px; border: 1px solid rgba(0, 255, 71, 0.1); }
+    .message.typing { background: rgba(0, 0, 0, 0.2); margin-right: 20px; border: 1px solid rgba(0, 255, 71, 0.1); opacity: 0.7; animation: typing-pulse 1.5s infinite; }
+    @keyframes typing-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .chat-input-container { display: flex; gap: 10px; }
+    .chat-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 255, 71, 0.2); border-radius: 10px; padding: 8px 12px; color: #e8f5e8; font-size: 13px; outline: none; }
+    .chat-input:focus { border-color: var(--primary-color); }
+    .send-btn { background: rgba(0, 255, 71, 0.2); border: 1px solid var(--primary-color); border-radius: 10px; padding: 8px 12px; color: var(--primary-color); cursor: pointer; transition: all 0.3s ease; }
+    .send-btn:hover { background: rgba(0, 255, 71, 0.3); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     @media (max-width: 768px) {
-        .control-panel {
-            top: 15px;
-            right: 15px;
-            flex-direction: row;
-            gap: 8px;
-        }
-        
-        .control-btn {
-            width: 40px;
-            height: 40px;
-        }
-        
-        #settings-panel {
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            width: auto;
-            max-height: calc(100vh - 30px);
-        }
-        
-        #ai-chat {
-            bottom: 15px;
-            right: 15px;
-            left: 15px;
-            width: auto;
-            height: 300px;
-        }
-        
-        .mode-buttons {
-            flex-direction: column;
-        }
-        
-        #mode-selection {
-            width: 90vw;
-            max-width: 350px;
-        }
+        .control-panel { top: 15px; right: 15px; flex-direction: row; gap: 8px; }
+        .control-btn { width: 40px; height: 40px; }
+        #settings-panel { top: 15px; left: 15px; right: 15px; width: auto; max-height: calc(100vh - 30px); }
+        #ai-chat { bottom: 15px; right: 15px; left: 15px; width: auto; height: 300px; }
+        .mode-buttons { flex-direction: column; }
+        #mode-selection { width: 90vw; max-width: 350px; }
     }
-    
     .lil-gui.root { z-index: 101; }
 </style>
 </head>
@@ -627,10 +121,8 @@
     <div class="robot-img sleeping" id="robot-container"></div>
 </section>
 
-<!-- Эффект включения -->
+<!-- ... ВЕСЬ ВАШ HTML ОСТАЕТСЯ ЗДЕСЬ ... -->
 <div class="boot-sequence" id="boot-sequence"></div>
-
-<!-- Модальное окно выбора режима -->
 <div id="mode-selection">
     <h2>Система активирована</h2>
     <p>Инициализация завершена. Выберите режим работы:</p>
@@ -639,34 +131,12 @@
         <button class="mode-btn" id="passive-mode">Режим наблюдения</button>
     </div>
 </div>
-
-<!-- Статус пассивного режима -->
-<div class="passive-status" id="passive-status">
-    Режим наблюдения активен
-</div>
-
-<!-- Панель управления -->
+<div class="passive-status" id="passive-status">Режим наблюдения активен</div>
 <div class="control-panel" id="control-panel">
-    <div class="control-btn" id="settings-toggle" title="Настройки">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.69-1.62-0.92L14.4,2.23c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,4.65C8.63,4.88,8.1,5.19,7.6,5.57L5.22,4.61C5,4.54,4.75,4.61,4.62,4.83L2.71,8.15 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.8,11.06,4.78,11.37,4.78,11.69c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.69,1.62,0.92L9.6,21.77 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.42c0.59-0.23,1.12-0.54,1.62-0.92l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-        </svg>
-    </div>
-    
-    <div class="control-btn" id="follow-toggle" title="Следование за курсором">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-        </svg>
-    </div>
-    
-    <div class="control-btn" id="ai-toggle" title="AI Чат">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C10.84,22 9.73,21.75 8.74,21.3L3,23L4.7,17.26C4.25,16.27 4,15.16 4,14A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12C4,12.85 4.18,13.64 4.5,14.34L3.5,18.5L7.66,17.5C8.36,17.82 9.15,18 10,18H12A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6.5A1.5,1.5 0 0,1 13.5,8A1.5,1.5 0 0,1 12,9.5A1.5,1.5 0 0,1 10.5,8A1.5,1.5 0 0,1 12,6.5M16,10.5A1.5,1.5 0 0,1 17.5,12A1.5,1.5 0 0,1 16,13.5A1.5,1.5 0 0,1 14.5,12A1.5,1.5 0 0,1 16,10.5M8,10.5A1.5,1.5 0 0,1 9.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,10.5Z"/>
-        </svg>
-    </div>
+    <div class="control-btn" id="settings-toggle" title="Настройки"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.69-1.62-0.92L14.4,2.23c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,4.65C8.63,4.88,8.1,5.19,7.6,5.57L5.22,4.61C5,4.54,4.75,4.61,4.62,4.83L2.71,8.15 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.8,11.06,4.78,11.37,4.78,11.69c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.69,1.62,0.92L9.6,21.77 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0-0.44-0.17-0.48-0.41l0.38-2.42c0.59-0.23,1.12-0.54,1.62-0.92l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+    <div class="control-btn" id="follow-toggle" title="Следование за курсором"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg></div>
+    <div class="control-btn" id="ai-toggle" title="AI Чат"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C10.84,22 9.73,21.75 8.74,21.3L3,23L4.7,17.26C4.25,16.27 4,15.16 4,14A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12C4,12.85 4.18,13.64 4.5,14.34L3.5,18.5L7.66,17.5C8.36,17.82 9.15,18 10,18H12A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6.5A1.5,1.5 0 0,1 13.5,8A1.5,1.5 0 0,1 12,9.5A1.5,1.5 0 0,1 10.5,8A1.5,1.5 0 0,1 12,6.5M16,10.5A1.5,1.5 0 0,1 17.5,12A1.5,1.5 0 0,1 16,13.5A1.5,1.5 0 0,1 14.5,12A1.5,1.5 0 0,1 16,10.5M8,10.5A1.5,1.5 0 0,1 9.5,12A1.5,1.5 0 0,1 8,13.5A1.5,1.5 0 0,1 6.5,12A1.5,1.5 0 0,1 8,10.5Z"/></svg></div>
 </div>
-
-<!-- Панель настроек -->
 <div id="settings-panel">
     <div class="settings-header">
         <h3>Настройки дрона</h3>
@@ -675,77 +145,30 @@
     <div class="settings-content">
         <div class="setting-group">
             <h4>Поведение</h4>
-            <div class="setting-item">
-                <label>Следование за курсором</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="cursor-follow">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <label for="followSpeed">Скорость следования</label>
-                <input type="range" id="followSpeed" min="0.01" max="0.2" step="0.01">
-            </div>
-            <div class="setting-item">
-                <label for="followSensitivity">Чувствительность следования</label>
-                <input type="range" id="followSensitivity" min="0.1" max="2" step="0.1" value="1">
-            </div>
+            <div class="setting-item"><label>Следование за курсором</label><label class="toggle-switch"><input type="checkbox" id="cursor-follow"><span class="slider"></span></label></div>
+            <div class="setting-item"><label for="followSpeed">Скорость следования</label><input type="range" id="followSpeed" min="0.01" max="0.2" step="0.01"></div>
+            <div class="setting-item"><label for="followSensitivity">Чувствительность следования</label><input type="range" id="followSensitivity" min="0.1" max="2" step="0.1" value="1"></div>
         </div>
-        
         <div class="setting-group">
             <h4>Физика</h4>
-            <div class="setting-item">
-                <label for="dragSensitivity">Чувствительность вращения</label>
-                <input type="range" id="dragSensitivity" min="0.002" max="0.02" step="0.001">
-            </div>
-            <div class="setting-item">
-                <label for="inertiaMultiplier">Инерция</label>
-                <input type="range" id="inertiaMultiplier" min="0.1" max="1" step="0.05">
-            </div>
-            <div class="setting-item">
-                <label for="inertiaDamping">Затухание</label>
-                <input type="range" id="inertiaDamping" min="0.85" max="0.99" step="0.01">
-            </div>
+            <div class="setting-item"><label for="dragSensitivity">Чувствительность вращения</label><input type="range" id="dragSensitivity" min="0.002" max="0.02" step="0.001"></div>
+            <div class="setting-item"><label for="inertiaMultiplier">Инерция</label><input type="range" id="inertiaMultiplier" min="0.1" max="1" step="0.05"></div>
+            <div class="setting-item"><label for="inertiaDamping">Затухание</label><input type="range" id="inertiaDamping" min="0.85" max="0.99" step="0.01"></div>
         </div>
-        
         <div class="setting-group">
             <h4>Левитация</h4>
-            <div class="setting-item">
-                <label for="levitationAmplitude">Амплитуда</label>
-                <input type="range" id="levitationAmplitude" min="0" max="0.4" step="0.01">
-            </div>
-            <div class="setting-item">
-                <label for="levitationSpeed">Скорость</label>
-                <input type="range" id="levitationSpeed" min="0.2" max="2.5" step="0.1">
-            </div>
+            <div class="setting-item"><label for="levitationAmplitude">Амплитуда</label><input type="range" id="levitationAmplitude" min="0" max="0.4" step="0.01"></div>
+            <div class="setting-item"><label for="levitationSpeed">Скорость</label><input type="range" id="levitationSpeed" min="0.2" max="2.5" step="0.1"></div>
         </div>
-        
         <div class="setting-group">
             <h4>Внешний вид</h4>
-            <div class="setting-item">
-                <label for="robotScale">Масштаб дрона</label>
-                <input type="range" id="robotScale" min="3" max="12" step="0.2">
-            </div>
-            <div class="setting-item">
-                <label for="baseEmissive">Яркость свечения</label>
-                <input type="range" id="baseEmissive" min="0.05" max="0.5" step="0.01">
-            </div>
-            <div class="setting-item">
-                <label for="accentLightColor">Цвет подсветки</label>
-                <input type="color" id="accentLightColor">
-            </div>
-            <div class="setting-item">
-                <label for="eyesColor">Цвет глаз</label>
-                <input type="color" id="eyesColor">
-            </div>
+            <div class="setting-item"><label for="robotScale">Масштаб дрона</label><input type="range" id="robotScale" min="3" max="12" step="0.2"></div>
+            <div class="setting-item"><label for="baseEmissive">Яркость свечения</label><input type="range" id="baseEmissive" min="0.05" max="0.5" step="0.01"></div>
+            <div class="setting-item"><label for="accentLightColor">Цвет подсветки</label><input type="color" id="accentLightColor"></div>
+            <div class="setting-item"><label for="eyesColor">Цвет глаз</label><input type="color" id="eyesColor"></div>
         </div>
-        
-        <!-- Поле для API ключа удалено, так как он теперь на сервере -->
-        
     </div>
 </div>
-
-<!-- AI Чат -->
 <div id="ai-chat">
     <div class="chat-header">
         <h3>AI Ассистент</h3>
@@ -761,16 +184,9 @@
 </div>
 
 <script>
-// --- СОСТОЯНИЯ ДРОНА ---
-const DRONE_STATE = {
-    SLEEPING: 'sleeping',
-    BOOTING: 'booting', 
-    PASSIVE: 'passive',
-    PASSIVE_WAITING: 'passive_waiting',
-    INTERACTIVE: 'interactive',
-    ACTIVATING: 'activating'
-};
-
+// --- ВЕСЬ ВАШ КОД ДРОНА ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ДО СЕКЦИИ AI ---
+// ...
+const DRONE_STATE = { SLEEPING: 'sleeping', BOOTING: 'booting', PASSIVE: 'passive', PASSIVE_WAITING: 'passive_waiting', INTERACTIVE: 'interactive', ACTIVATING: 'activating' };
 let currentState = DRONE_STATE.SLEEPING;
 let lastClickTime = 0;
 let bootingStartTime = 0;
@@ -779,178 +195,22 @@ let passiveReactivationTimer = null;
 let screenMaterial = null;
 let eyeMaterials = [];
 let edgeMaterials = [];
-
-// --- НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ СЛЕДОВАНИЯ ЗА КУРСОРОМ ---
 let cursorFollowEnabled = false;
 let mousePosition = { x: 0, y: 0 };
 let targetPosition = { x: 0, y: 0 };
 let currentPosition = { x: 0, y: 0 };
-
-// --- AI ИНТЕГРАЦИЯ ---
 let isProcessingCommand = false;
-
-// --- ЭНЕРГЕТИЧЕСКИЕ ЧАСТИЦЫ ---
-function createEnergyParticles() {
-    const container = document.getElementById('energy-particles');
-    
-    for (let i = 0; i < 15; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        
-        const duration = 3 + Math.random() * 4;
-        const delay = Math.random() * 2;
-        
-        particle.style.animation = `particle-float-${i} ${duration}s ease-in-out ${delay}s infinite`;
-        
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes particle-float-${i} {
-                0%, 100% { 
-                    opacity: 0; 
-                    transform: translate(0, 0) scale(0.5); 
-                }
-                25% { 
-                    opacity: 0.8; 
-                    transform: translate(${(Math.random() - 0.5) * 100}px, ${(Math.random() - 0.5) * 100}px) scale(1); 
-                }
-                50% { 
-                    opacity: 1; 
-                    transform: translate(${(Math.random() - 0.5) * 150}px, ${(Math.random() - 0.5) * 150}px) scale(1.2); 
-                }
-                75% { 
-                    opacity: 0.6; 
-                    transform: translate(${(Math.random() - 0.5) * 80}px, ${(Math.random() - 0.5) * 80}px) scale(0.8); 
-                }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        container.appendChild(particle);
-    }
-}
-
-function toggleEnergyParticles(active) {
-    const particles = document.querySelectorAll('.particle');
-    particles.forEach(particle => {
-        particle.style.animationPlayState = active ? 'running' : 'paused';
-        particle.style.opacity = active ? '' : '0';
-    });
-}
-
-// --- ЗВУКОВЫЕ ЭФФЕКТЫ ---
+function createEnergyParticles() { const container = document.getElementById('energy-particles'); for (let i = 0; i < 15; i++) { const particle = document.createElement('div'); particle.className = 'particle'; particle.style.left = Math.random() * 100 + '%'; particle.style.top = Math.random() * 100 + '%'; const duration = 3 + Math.random() * 4; const delay = Math.random() * 2; particle.style.animation = `particle-float-${i} ${duration}s ease-in-out ${delay}s infinite`; const style = document.createElement('style'); style.textContent = `@keyframes particle-float-${i} { 0%, 100% { opacity: 0; transform: translate(0, 0) scale(0.5); } 25% { opacity: 0.8; transform: translate(${(Math.random() - 0.5) * 100}px, ${(Math.random() - 0.5) * 100}px) scale(1); } 50% { opacity: 1; transform: translate(${(Math.random() - 0.5) * 150}px, ${(Math.random() - 0.5) * 150}px) scale(1.2); } 75% { opacity: 0.6; transform: translate(${(Math.random() - 0.5) * 80}px, ${(Math.random() - 0.5) * 80}px) scale(0.8); } }`; document.head.appendChild(style); container.appendChild(particle); } }
+function toggleEnergyParticles(active) { const particles = document.querySelectorAll('.particle'); particles.forEach(particle => { particle.style.animationPlayState = active ? 'running' : 'paused'; particle.style.opacity = active ? '' : '0'; }); }
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext = null;
-
-function initAudio() {
-    if (!audioContext) {
-        audioContext = new AudioContext();
-    }
-}
-
-function playBootSequence() {
-    if (!audioContext) return;
-    
-    setTimeout(() => playMechanicalBeep(250, 100, 'square'), 0);
-    setTimeout(() => playMechanicalBeep(350, 120, 'triangle'), 150);
-    setTimeout(() => playMechanicalBeep(500, 100, 'sine'), 350);
-    setTimeout(() => playMechanicalBeep(700, 150, 'triangle'), 500);
-    setTimeout(() => playMechanicalBeep(900, 200, 'sine'), 800);
-    setTimeout(() => playSystemReady(), 1200);
-}
-
-function playMechanicalBeep(frequency, duration, type = 'square') {
-    if (!audioContext) return;
-    
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    const filter = audioContext.createBiquadFilter();
-    
-    oscillator.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    oscillator.type = type;
-    
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(frequency * 1.5, audioContext.currentTime);
-    
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + duration / 1000);
-}
-
-function playSystemReady() {
-    const notes = [523, 659, 784, 1047];
-    notes.forEach((freq, i) => {
-        setTimeout(() => playMechanicalBeep(freq, 120, 'sine'), i * 80);
-    });
-}
-
-function playModeSelectSound() {
-    playMechanicalBeep(800, 80, 'triangle');
-    setTimeout(() => playMechanicalBeep(1000, 120, 'sine'), 80);
-}
-
-function playShutdownSound() {
-    const startFreq = 600;
-    const endFreq = 150;
-    const duration = 1200;
-    
-    if (!audioContext) return;
-    
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(startFreq, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + duration / 1000);
-    oscillator.type = 'sawtooth';
-    
-    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + duration / 1000);
-}
-
-// --- КОНФИГ И THREE.JS ---
-const CONFIG = {
-    robotScale: 8.5, followSpeed: 0.05, followSensitivity: 1, maxFollowAngle: 0.7, 
-    dragRotationSpeed: 0.007, inertiaMultiplier: 0.4, inertiaDamping: 0.98, 
-    velocityThreshold: 0.0001, levitationAmplitude: 0.15, levitationSpeed: 1.2, 
-    baseEmissive: 0.15, hoverEmissive: 0.25, ambientLight: 0.8, mainLight: 1.0, 
-    accentLight: 0.6, accentLightColor: '#00ff47', passiveToActiveTransitionTime: 8000,
-    screen: {
-        sleepingColor: '#002818',
-        activeColor: '#00ff47',
-        bootingPulseSpeed: 4.0,
-        idlePulseSpeed: 1.2,
-        interactivePulseSpeed: 2.0
-    },
-    sleeping: {
-        levitationAmplitude: 0.04,
-        levitationSpeed: 0.4,
-        emissiveIntensity: 0.03,
-        lightIntensity: 0.2
-    },
-    eyes: {
-        color: '#00ff47',
-        blinkInterval: 3000,
-        blinkDuration: 150,
-        scanInterval: 8000,
-        scanDuration: 2000,
-        normalIntensity: 0.3,
-        scanIntensity: 0.6
-    }
-};
-
+function initAudio() { if (!audioContext) { audioContext = new AudioContext(); } }
+function playBootSequence() { if (!audioContext) return; setTimeout(() => playMechanicalBeep(250, 100, 'square'), 0); setTimeout(() => playMechanicalBeep(350, 120, 'triangle'), 150); setTimeout(() => playMechanicalBeep(500, 100, 'sine'), 350); setTimeout(() => playMechanicalBeep(700, 150, 'triangle'), 500); setTimeout(() => playMechanicalBeep(900, 200, 'sine'), 800); setTimeout(() => playSystemReady(), 1200); }
+function playMechanicalBeep(frequency, duration, type = 'square') { if (!audioContext) return; const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain(); const filter = audioContext.createBiquadFilter(); oscillator.connect(filter); filter.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); oscillator.type = type; filter.type = 'lowpass'; filter.frequency.setValueAtTime(frequency * 1.5, audioContext.currentTime); gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000); oscillator.start(audioContext.currentTime); oscillator.stop(audioContext.currentTime + duration / 1000); }
+function playSystemReady() { const notes = [523, 659, 784, 1047]; notes.forEach((freq, i) => { setTimeout(() => playMechanicalBeep(freq, 120, 'sine'), i * 80); }); }
+function playModeSelectSound() { playMechanicalBeep(800, 80, 'triangle'); setTimeout(() => playMechanicalBeep(1000, 120, 'sine'), 80); }
+function playShutdownSound() { const startFreq = 600; const endFreq = 150; const duration = 1200; if (!audioContext) return; const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.frequency.setValueAtTime(startFreq, audioContext.currentTime); oscillator.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + duration / 1000); oscillator.type = 'sawtooth'; gainNode.gain.setValueAtTime(0.08, audioContext.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000); oscillator.start(audioContext.currentTime); oscillator.stop(audioContext.currentTime + duration / 1000); }
+const CONFIG = { robotScale: 8.5, followSpeed: 0.05, followSensitivity: 1, maxFollowAngle: 0.7, dragRotationSpeed: 0.007, inertiaMultiplier: 0.4, inertiaDamping: 0.98, velocityThreshold: 0.0001, levitationAmplitude: 0.15, levitationSpeed: 1.2, baseEmissive: 0.15, hoverEmissive: 0.25, ambientLight: 0.8, mainLight: 1.0, accentLight: 0.6, accentLightColor: '#00ff47', passiveToActiveTransitionTime: 8000, screen: { sleepingColor: '#002818', activeColor: '#00ff47', bootingPulseSpeed: 4.0, idlePulseSpeed: 1.2, interactivePulseSpeed: 2.0 }, sleeping: { levitationAmplitude: 0.04, levitationSpeed: 0.4, emissiveIntensity: 0.03, lightIntensity: 0.2 }, eyes: { color: '#00ff47', blinkInterval: 3000, blinkDuration: 150, scanInterval: 8000, scanDuration: 2000, normalIntensity: 0.3, scanIntensity: 0.6 } };
 const container = document.getElementById('robot-container');
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -960,7 +220,6 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
-
 const ambientLight = new THREE.AmbientLight(0xffffff, CONFIG.sleeping.lightIntensity);
 scene.add(ambientLight);
 const mainLight = new THREE.DirectionalLight(0xffffff, CONFIG.sleeping.lightIntensity);
@@ -970,7 +229,6 @@ scene.add(mainLight);
 const accentLight = new THREE.DirectionalLight(CONFIG.accentLightColor, CONFIG.sleeping.lightIntensity);
 accentLight.position.set(-5, 5, -5);
 scene.add(accentLight);
-
 let model;
 let blinkTimer = 0;
 let scanTimer = 0;
@@ -979,7 +237,6 @@ let isScanning = false;
 let scanDirection = 1;
 let activationStartTime = 0;
 let isLookingAround = false;
-
 const clock = new THREE.Clock();
 const homeQuaternion = new THREE.Quaternion(), targetQuaternion = new THREE.Quaternion();
 let isDragging = false, isMouseOver = false;
@@ -987,39 +244,18 @@ let angularVelocity = new THREE.Vector2(0, 0);
 let previousMousePosition = { x: 0, y: 0 };
 let inactiveStartTime = null;
 
-// --- AI КОМАНДЫ ---
+// --- AI КОМАНДЫ И ИНТЕГРАЦИЯ ---
+
 class AICommandProcessor {
     constructor() {
         this.commands = {
-            'оборот': () => this.executeRotation(),
-            'поворот': () => this.executeRotation(),
-            'вращение': () => this.executeRotation(),
-            'следуй': () => this.toggleCursorFollow(true),
-            'следовать': () => this.toggleCursorFollow(true),
-            'остановись': () => this.toggleCursorFollow(false),
-            'стоп': () => this.toggleCursorFollow(false),
-            'увеличь': (params) => this.changeScale(params, 1.2),
-            'уменьши': (params) => this.changeScale(params, 0.8),
-            'цвет': (params) => this.changeColor(params),
-            'красный': () => this.changeColor(['красный']),
-            'синий': () => this.changeColor(['синий']),
-            'зеленый': () => this.changeColor(['зеленый']),
-            'желтый': () => this.changeColor(['желтый']),
-            'спать': () => this.goToSleep(),
-            'выключись': () => this.goToSleep(),
-            'привет': () => this.greet(),
-            'домой': () => this.returnHome()
+            'оборот': () => this.executeRotation(), 'поворот': () => this.executeRotation(), 'вращение': () => this.executeRotation(),
+            'следуй': () => this.toggleCursorFollow(true), 'следовать': () => this.toggleCursorFollow(true), 'остановись': () => this.toggleCursorFollow(false), 'стоп': () => this.toggleCursorFollow(false),
+            'увеличь': (params) => this.changeScale(params, 1.2), 'уменьши': (params) => this.changeScale(params, 0.8),
+            'цвет': (params) => this.changeColor(params), 'красный': () => this.changeColor(['красный']), 'синий': () => this.changeColor(['синий']), 'зеленый': () => this.changeColor(['зеленый']), 'желтый': () => this.changeColor(['желтый']),
+            'спать': () => this.goToSleep(), 'выключись': () => this.goToSleep(), 'привет': () => this.greet(), 'домой': () => this.returnHome()
         };
-        
-        this.colorMap = {
-            'красный': '#ff0000',
-            'синий': '#0000ff',
-            'зеленый': '#00ff00',
-            'желтый': '#ffff00',
-            'фиолетовый': '#ff00ff',
-            'оранжевый': '#ff8000',
-            'белый': '#ffffff'
-        };
+        this.colorMap = { 'красный': '#ff0000', 'синий': '#0000ff', 'зеленый': '#00ff00', 'желтый': '#ffff00', 'фиолетовый': '#ff00ff', 'оранжевый': '#ff8000', 'белый': '#ffffff' };
     }
     
     async processCommand(text) {
@@ -1036,796 +272,151 @@ class AICommandProcessor {
                 }
             }
         }
-        
-        return await this.processWithGemini(text);
+        // ===================================================================
+        // ИЗМЕНЕНИЕ ЗДЕСЬ: Вызываем новую функцию getAiReply
+        // ===================================================================
+        return await getAiReply(text);
     }
     
-    executeRotation() {
-        if (currentState !== DRONE_STATE.INTERACTIVE || !model) {
-            throw new Error('Дрон должен быть в интерактивном режиме');
-        }
-        
-        const rotationSpeed = 0.1;
-        const duration = 2000;
-        const startTime = clock.getElapsedTime();
-        
-        const rotate = () => {
-            const elapsed = clock.getElapsedTime() - startTime;
-            if (elapsed < duration / 1000) {
-                model.rotation.y += rotationSpeed;
-                requestAnimationFrame(rotate);
-            } else {
-                model.rotation.y = 0;
-            }
-        };
-        
-        rotate();
-        playMechanicalBeep(600, 200, 'triangle');
-    }
-    
-    toggleCursorFollow(enable) {
-        if (currentState !== DRONE_STATE.INTERACTIVE) {
-            throw new Error('Функция доступна только в интерактивном режиме');
-        }
-        
-        cursorFollowEnabled = enable;
-        document.getElementById('cursor-follow').checked = enable;
-        document.getElementById('follow-toggle').classList.toggle('active', enable);
-        
-        playModeSelectSound();
-    }
-    
-    changeScale(params, multiplier) {
-        if (!model) {
-            throw new Error('Модель дрона не загружена');
-        }
-        
-        const newScale = CONFIG.robotScale * multiplier;
-        if (newScale >= 3 && newScale <= 12) {
-            CONFIG.robotScale = newScale;
-            model.scale.set(newScale, newScale, newScale);
-            document.getElementById('robotScale').value = newScale;
-        }
-        
-        playMechanicalBeep(400, 150, 'sine');
-    }
-    
-    changeColor(params) {
-        let color = null;
-        
-        for (const param of params) {
-            if (this.colorMap[param]) {
-                color = this.colorMap[param];
-                break;
-            }
-        }
-        
-        if (color) {
-            CONFIG.eyes.color = color;
-            CONFIG.accentLightColor = color;
-            
-            eyeMaterials.forEach(material => material.emissive.set(color));
-            if (screenMaterial && currentState === DRONE_STATE.INTERACTIVE) {
-                screenMaterial.emissive.set(color);
-            }
-            accentLight.color.set(color);
-            
-            document.getElementById('eyesColor').value = color;
-            document.getElementById('accentLightColor').value = color;
-            
-            playMechanicalBeep(800, 200, 'sine');
-        } else {
-            throw new Error('Неизвестный цвет');
-        }
-    }
-    
-    goToSleep() {
-        goToSleep();
-    }
-    
-    greet() {
-        if (model && currentState === DRONE_STATE.INTERACTIVE) {
-            const originalY = model.position.y;
-            const greetAnimation = () => {
-                model.position.y = originalY + Math.sin(clock.getElapsedTime() * 8) * 0.3;
-            };
-            
-            const animationId = setInterval(greetAnimation, 16);
-            setTimeout(() => {
-                clearInterval(animationId);
-                model.position.y = originalY;
-            }, 2000);
-            
-            playSystemReady();
-        }
-        
-        return "Привет! Я рад тебя видеть! 👋";
-    }
-    
-    returnHome() {
-        if (model && currentState === DRONE_STATE.INTERACTIVE) {
-            targetQuaternion.copy(homeQuaternion);
-            cursorFollowEnabled = false;
-            document.getElementById('cursor-follow').checked = false;
-            document.getElementById('follow-toggle').classList.remove('active');
-            
-            playModeSelectSound();
-        }
-    }
-    
-    // ===================================================================
-    // ИЗМЕНЕННАЯ ФУНКЦИЯ ДЛЯ РАБОТЫ С СЕРВЕРОМ
-    // ===================================================================
-       async processWithGemini(text) {
-        try {
-            // Используем ПОЛНЫЙ АДРЕС сервера на Railway
-// ЗАМЕНИТЕ ВСЮ СТРОЧКУ FETCH НА ЭТУ:
-const response = await fetch('https://droid-production-f73e.up.railway.app/api/gemini', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text: text })
-});
+    executeRotation() { if (currentState !== DRONE_STATE.INTERACTIVE || !model) { throw new Error('Дрон должен быть в интерактивном режиме'); } const rotationSpeed = 0.1; const duration = 2000; const startTime = clock.getElapsedTime(); const rotate = () => { const elapsed = clock.getElapsedTime() - startTime; if (elapsed < duration / 1000) { model.rotation.y += rotationSpeed; requestAnimationFrame(rotate); } else { model.rotation.y = 0; } }; rotate(); playMechanicalBeep(600, 200, 'triangle'); }
+    toggleCursorFollow(enable) { if (currentState !== DRONE_STATE.INTERACTIVE) { throw new Error('Функция доступна только в интерактивном режиме'); } cursorFollowEnabled = enable; document.getElementById('cursor-follow').checked = enable; document.getElementById('follow-toggle').classList.toggle('active', enable); playModeSelectSound(); }
+    changeScale(params, multiplier) { if (!model) { throw new Error('Модель дрона не загружена'); } const newScale = CONFIG.robotScale * multiplier; if (newScale >= 3 && newScale <= 12) { CONFIG.robotScale = newScale; model.scale.set(newScale, newScale, newScale); document.getElementById('robotScale').value = newScale; } playMechanicalBeep(400, 150, 'sine'); }
+    changeColor(params) { let color = null; for (const param of params) { if (this.colorMap[param]) { color = this.colorMap[param]; break; } } if (color) { CONFIG.eyes.color = color; CONFIG.accentLightColor = color; eyeMaterials.forEach(material => material.emissive.set(color)); if (screenMaterial && currentState === DRONE_STATE.INTERACTIVE) { screenMaterial.emissive.set(color); } accentLight.color.set(color); document.getElementById('eyesColor').value = color; document.getElementById('accentLightColor').value = color; playMechanicalBeep(800, 200, 'sine'); } else { throw new Error('Неизвестный цвет'); } }
+    goToSleep() { goToSleep(); }
+    greet() { if (model && currentState === DRONE_STATE.INTERACTIVE) { const originalY = model.position.y; const greetAnimation = () => { model.position.y = originalY + Math.sin(clock.getElapsedTime() * 8) * 0.3; }; const animationId = setInterval(greetAnimation, 16); setTimeout(() => { clearInterval(animationId); model.position.y = originalY; }, 2000); playSystemReady(); } return "Привет! Я рад тебя видеть! 👋"; }
+    returnHome() { if (model && currentState === DRONE_STATE.INTERACTIVE) { targetQuaternion.copy(homeQuaternion); cursorFollowEnabled = false; document.getElementById('cursor-follow').checked = false; document.getElementById('follow-toggle').classList.remove('active'); playModeSelectSound(); } }
+}
 
-            // ЧИТАЕМ ОТВЕТ ТОЛЬКО ОДИН РАЗ
-            const data = await response.json();
+// ===================================================================
+// НОВЫЙ КОД ДЛЯ РАБОТЫ С AI В БРАУЗЕРЕ (WEB LLM)
+// ===================================================================
+let chat;
+const aiStatusMessage = { element: null, text: 'AI: Инициализация...' };
 
-            // ТЕПЕРЬ ПРОВЕРЯЕМ, БЫЛ ЛИ ЗАПРОС УСПЕШНЫМ
-            if (!response.ok) {
-                // Если была ошибка, то в 'data' уже лежит ее описание от сервера
-                const errorMessage = data.error || `HTTP error! status: ${response.status}`;
-                throw new Error(errorMessage);
-            }
-
-            // Если все хорошо, обрабатываем успешный ответ
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                return data.candidates[0].content.parts[0].text;
-            } else {
-                // На случай, если сервер вернул успешный статус, но пустые данные
-                return 'Получен странный ответ от AI.';
-            }
-        } catch (error) {
-            console.error('Ошибка связи с AI сервисом:', error);
-            // Эта ошибка теперь будет более информативной
-            return `Ошибка связи с AI сервисом: ${error.message}`;
-        }
+// Функция для обновления статуса AI в чате
+function updateAiStatus(text) {
+    aiStatusMessage.text = text;
+    if (aiStatusMessage.element) {
+        aiStatusMessage.element.textContent = text;
+    } else {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ai typing'; // Используем стиль 'typing' для индикации
+        messageDiv.textContent = text;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        aiStatusMessage.element = messageDiv;
     }
 }
+
+async function initWebLLM() {
+    try {
+        const webllm = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.min.js");
+        
+        // Выбираем маленькую, но умную модель для быстрого старта
+        const selectedModel = "Llama-3-8B-Instruct-q4f32_1-MLC";
+
+        chat = await webllm.CreateWebWorkerChat(new Worker(
+            "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/web-worker.js",
+            {type: "module"}
+        ));
+        
+        await chat.reload(selectedModel, undefined, {
+            model_list: [{
+                "model_url": "https://huggingface.co/mlc-ai/Llama-3-8B-Instruct-q4f32_1-MLC/resolve/main/",
+                "local_id": "Llama-3-8B-Instruct-q4f32_1-MLC"
+            }],
+            model_lib_map: {
+                "Llama-3-8B-Instruct-q4f32_1-MLC": "https://huggingface.co/mlc-ai/Llama-3-8B-Instruct-q4f32_1-MLC/resolve/main/Llama-3-8B-Instruct-q4f32_1-MLC-webgpu.wasm"
+            }
+        });
+
+        // Обновляем статус в чате по мере загрузки
+        chat.setInitProgressCallback((report) => {
+            updateAiStatus(`AI: Загрузка модели... ${Math.round(report.progress * 100)}%`);
+        });
+
+    } catch (err) {
+        updateAiStatus(`AI: Ошибка инициализации - ${err.toString()}`);
+        console.error("Ошибка инициализации WebLLM:", err);
+    }
+}
+
+// Новая функция для получения ответа от AI
+async function getAiReply(text) {
+    if (!chat || isProcessingCommand) {
+        return "AI еще не готов. Пожалуйста, подождите.";
+    }
+
+    try {
+        isProcessingCommand = true;
+        
+        const systemPrompt = "Ты AI-ассистент дрона. Отвечай кратко и по-дружески как умный дрон.";
+        const fullPrompt = `${systemPrompt}\n\nПользователь: ${text}\nAI:`;
+
+        const reply = await chat.generate(fullPrompt, (step, message) => {
+            // Можно добавить сюда обновление текста в реальном времени, если нужно
+        });
+        
+        // Сбрасываем историю чата, чтобы он не помнил предыдущие вопросы
+        await chat.resetChat();
+
+        return reply;
+    } catch(err) {
+        console.error("Ошибка генерации ответа:", err);
+        return `Произошла ошибка AI: ${err.toString()}`;
+    } finally {
+        isProcessingCommand = false;
+    }
+}
+
+// Запускаем инициализацию AI после загрузки страницы
+window.addEventListener('load', () => {
+    // Ждем активации интерактивного режима
+    document.getElementById('interactive-mode').addEventListener('click', () => {
+        setTimeout(initWebLLM, 1000); // Начинаем загрузку с небольшой задержкой
+    });
+});
 
 const aiProcessor = new AICommandProcessor();
-
-// --- АНИМАЦИЯ ОСМОТРА ДРОНА ---
-function performLookAround() {
-    if (!model || isLookingAround) return;
-    
-    isLookingAround = true;
-    const originalRotation = model.rotation.y;
-    const lookAroundDuration = 2000;
-    const startTime = clock.getElapsedTime();
-    
-    const lookAnimation = () => {
-        if (!isLookingAround) return;
-        
-        const elapsed = clock.getElapsedTime() - startTime;
-        const progress = elapsed / (lookAroundDuration / 1000);
-        
-        if (progress >= 1) {
-            model.rotation.y = originalRotation;
-            isLookingAround = false;
-            return;
-        }
-        
-        const angle = Math.sin(progress * Math.PI * 2) * 0.8;
-        model.rotation.y = originalRotation + angle;
-        
-        requestAnimationFrame(lookAnimation);
-    };
-    
-    lookAnimation();
-}
-
-// --- ЗАГРУЗКА МОДЕЛИ ---
+// ...
+// --- ОСТАЛЬНОЙ КОД ДРОНА (АНИМАЦИЯ, УПРАВЛЕНИЕ И Т.Д.) ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ---
+function performLookAround() { if (!model || isLookingAround) return; isLookingAround = true; const originalRotation = model.rotation.y; const lookAroundDuration = 2000; const startTime = clock.getElapsedTime(); const lookAnimation = () => { if (!isLookingAround) return; const elapsed = clock.getElapsedTime() - startTime; const progress = elapsed / (lookAroundDuration / 1000); if (progress >= 1) { model.rotation.y = originalRotation; isLookingAround = false; return; } const angle = Math.sin(progress * Math.PI * 2) * 0.8; model.rotation.y = originalRotation + angle; requestAnimationFrame(lookAnimation); }; lookAnimation(); }
 const loader = new THREE.GLTFLoader();
-loader.load('model.glb', (gltf) => {
-    model = gltf.scene;
-    model.scale.set(CONFIG.robotScale, CONFIG.robotScale, CONFIG.robotScale);
-    homeQuaternion.copy(model.quaternion);
-    targetQuaternion.copy(model.quaternion);
-    
-    model.traverse((child) => { 
-        if (child.isMesh) { 
-            const material = child.material;
-            
-            if (material.emissive && 
-                (material.emissive.r > 0.1 || material.emissive.g > 0.1 || material.emissive.b > 0.1)) {
-                
-                if (!screenMaterial) {
-                    screenMaterial = material;
-                    screenMaterial.emissive = new THREE.Color(CONFIG.screen.sleepingColor);
-                    screenMaterial.emissiveIntensity = CONFIG.sleeping.emissiveIntensity;
-                } else {
-                    eyeMaterials.push(material);
-                    material.emissive = new THREE.Color(CONFIG.screen.sleepingColor);
-                    material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity;
-                }
-            } else {
-                edgeMaterials.push(material);
-                material.emissive = new THREE.Color(0x001a0a); 
-                material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; 
-            }
-        } 
-    });
-    
-    scene.add(model);
-    setupUI();
-    createEnergyParticles();
-});
-
+loader.load('model.glb', (gltf) => { model = gltf.scene; model.scale.set(CONFIG.robotScale, CONFIG.robotScale, CONFIG.robotScale); homeQuaternion.copy(model.quaternion); targetQuaternion.copy(model.quaternion); model.traverse((child) => { if (child.isMesh) { const material = child.material; if (material.emissive && (material.emissive.r > 0.1 || material.emissive.g > 0.1 || material.emissive.b > 0.1)) { if (!screenMaterial) { screenMaterial = material; screenMaterial.emissive = new THREE.Color(CONFIG.screen.sleepingColor); screenMaterial.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; } else { eyeMaterials.push(material); material.emissive = new THREE.Color(CONFIG.screen.sleepingColor); material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; } } else { edgeMaterials.push(material); material.emissive = new THREE.Color(0x001a0a); material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; } } }); scene.add(model); setupUI(); createEnergyParticles(); });
 camera.position.set(0, 0, 10);
-
-// --- СЛЕДОВАНИЕ ЗА КУРСОРОМ ---
-function updateCursorFollow() {
-    if (!cursorFollowEnabled || !model || currentState !== DRONE_STATE.INTERACTIVE) return;
-    
-    currentPosition.x += (targetPosition.x - currentPosition.x) * CONFIG.followSpeed * CONFIG.followSensitivity;
-    currentPosition.y += (targetPosition.y - currentPosition.y) * CONFIG.followSpeed * CONFIG.followSensitivity;
-    
-    model.position.x = currentPosition.x;
-    model.position.z = currentPosition.y;
-    
-    const angle = Math.atan2(targetPosition.y - currentPosition.y, targetPosition.x - currentPosition.x);
-    targetQuaternion.setFromEuler(new THREE.Euler(0, angle, 0));
-}
-
-container.addEventListener('mousemove', (e) => {
-    if (currentState === DRONE_STATE.INTERACTIVE) {
-        const rect = container.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        
-        mousePosition.x = x;
-        mousePosition.y = y;
-        
-        if (cursorFollowEnabled) {
-            targetPosition.x = (x - 0.5) * 8;
-            targetPosition.y = -(y - 0.5) * 6;
-        }
-    }
-});
-
-// --- ФУНКЦИИ АНИМАЦИИ ГЛАЗ ---
-function blinkEyes() {
-    if (currentState !== DRONE_STATE.INTERACTIVE) return;
-    
-    isBlinking = true;
-    eyeMaterials.forEach(material => { material.emissiveIntensity = 0.05; });
-    
-    setTimeout(() => {
-        if (currentState === DRONE_STATE.INTERACTIVE && !isBlinking) return;
-        eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; });
-        isBlinking = false;
-    }, CONFIG.eyes.blinkDuration);
-}
-
-function scanEyes() {
-    if (currentState !== DRONE_STATE.INTERACTIVE || isScanning) return;
-    
-    isScanning = true;
-    const startTime = clock.getElapsedTime();
-    
-    const scanAnimation = () => {
-        if (!isScanning || currentState !== DRONE_STATE.INTERACTIVE) {
-            isScanning = false;
-            return;
-        }
-        
-        const elapsed = clock.getElapsedTime() - startTime;
-        const progress = elapsed / (CONFIG.eyes.scanDuration / 1000);
-        
-        if (progress >= 1) {
-            isScanning = false;
-            eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; });
-            return;
-        }
-        
-        const intensity = CONFIG.eyes.normalIntensity + Math.sin(progress * Math.PI * 6) * 0.3;
-        eyeMaterials.forEach(material => { material.emissiveIntensity = Math.max(0.1, intensity); });
-        
-        requestAnimationFrame(scanAnimation);
-    };
-    
-    scanAnimation();
-}
-
-// --- ОСНОВНАЯ АНИМАЦИЯ ---
-function animate() {
-    requestAnimationFrame(animate);
-    const dt = clock.getDelta(), et = clock.getElapsedTime();
-    
-    if (model) {
-        let amplitude, speed;
-        
-        switch(currentState) {
-            case DRONE_STATE.SLEEPING:
-                amplitude = CONFIG.sleeping.levitationAmplitude;
-                speed = CONFIG.sleeping.levitationSpeed;
-                break;
-                
-            case DRONE_STATE.BOOTING:
-                const bootProgress = Math.min((et - bootingStartTime) / 3, 1);
-                amplitude = CONFIG.sleeping.levitationAmplitude + 
-                           (CONFIG.levitationAmplitude - CONFIG.sleeping.levitationAmplitude) * bootProgress;
-                speed = CONFIG.sleeping.levitationSpeed + 
-                       (CONFIG.levitationSpeed - CONFIG.sleeping.levitationSpeed) * bootProgress;
-                       
-                if (screenMaterial) {
-                    screenMaterial.emissiveIntensity = 0.3;
-                    const colorProgress = Math.min(bootProgress, 1);
-                    screenMaterial.emissive.setRGB( (1 - colorProgress) * 0.4, colorProgress * 1.0, 0);
-                }
-                
-                edgeMaterials.forEach(material => {
-                    material.emissiveIntensity = bootProgress * 0.2;
-                    material.emissive.setRGB((1 - bootProgress) * 0.2, bootProgress * 0.4, 0);
-                });
-                
-                eyeMaterials.forEach(material => {
-                    material.emissiveIntensity = bootProgress * 0.4;
-                    material.emissive.setRGB((1 - bootProgress) * 0.4, bootProgress * 1.0, 0);
-                });
-                break;
-                
-            case DRONE_STATE.PASSIVE:
-            case DRONE_STATE.PASSIVE_WAITING:
-                amplitude = CONFIG.sleeping.levitationAmplitude * 1.8;
-                speed = CONFIG.sleeping.levitationSpeed * 1.5;
-                
-                if (screenMaterial) {
-                    screenMaterial.emissiveIntensity = 0.25 + Math.sin(et * CONFIG.screen.idlePulseSpeed) * 0.1;
-                    screenMaterial.emissive.set(CONFIG.screen.activeColor);
-                }
-                eyeMaterials.forEach(material => {
-                    material.emissiveIntensity = 0.2;
-                    material.emissive.set(CONFIG.eyes.color);
-                });
-                edgeMaterials.forEach(material => {
-                    material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity;
-                    material.emissive.set(0x001a0a);
-                });
-                break;
-                
-            case DRONE_STATE.ACTIVATING:
-                const activationProgress = Math.min((et - activationStartTime) / (CONFIG.passiveToActiveTransitionTime / 1000), 1);
-                amplitude = CONFIG.sleeping.levitationAmplitude * 1.8 + (CONFIG.levitationAmplitude - CONFIG.sleeping.levitationAmplitude * 1.8) * activationProgress;
-                speed = CONFIG.sleeping.levitationSpeed * 1.5 + (CONFIG.levitationSpeed - CONFIG.sleeping.levitationSpeed * 1.5) * activationProgress;
-                
-                if (screenMaterial) {
-                    screenMaterial.emissiveIntensity = 0.25 + activationProgress * 0.05;
-                    screenMaterial.emissive.set(CONFIG.screen.activeColor);
-                }
-                
-                eyeMaterials.forEach(material => {
-                    material.emissiveIntensity = 0.2 + activationProgress * (CONFIG.eyes.normalIntensity - 0.2);
-                    material.emissive.set(CONFIG.eyes.color);
-                });
-                
-                if (activationProgress >= 1) {
-                    currentState = DRONE_STATE.INTERACTIVE;
-                    document.getElementById('control-panel').classList.add('active');
-                    toggleEnergyParticles(true);
-                    blinkTimer = et * 1000;
-                    scanTimer = et * 1000;
-                    container.style.cursor = 'grab';
-                    setTimeout(() => performLookAround(), 500);
-                }
-                break;
-                
-            default: // INTERACTIVE
-                amplitude = CONFIG.levitationAmplitude;
-                speed = CONFIG.levitationSpeed;
-                
-                if (screenMaterial) {
-                    screenMaterial.emissive.set(CONFIG.screen.activeColor);
-                    screenMaterial.emissiveIntensity = 0.3;
-                }
-                
-                if (!isBlinking && !isScanning) {
-                    eyeMaterials.forEach(material => {
-                        material.emissive.set(CONFIG.eyes.color);
-                        material.emissiveIntensity = CONFIG.eyes.normalIntensity;
-                    });
-                    
-                    if (et * 1000 - blinkTimer > CONFIG.eyes.blinkInterval) {
-                        blinkTimer = et * 1000;
-                        blinkEyes();
-                    }
-                    
-                    if (et * 1000 - scanTimer > CONFIG.eyes.scanInterval) {
-                        scanTimer = et * 1000;
-                        scanEyes();
-                    }
-                }
-                
-                edgeMaterials.forEach(material => {
-                    material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity;
-                    material.emissive.set(0x001a0a);
-                });
-                
-                updateCursorFollow();
-        }
-        
-        if (!cursorFollowEnabled) {
-            model.position.y = Math.sin(et * speed) * amplitude;
-        } else {
-            const baseY = Math.sin(et * speed) * amplitude * 0.5;
-            model.position.y = baseY;
-        }
-        
-        if (currentState === DRONE_STATE.INTERACTIVE && !cursorFollowEnabled && !isLookingAround) {
-            if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) {
-                const dr = new THREE.Quaternion().setFromEuler(
-                    new THREE.Euler(
-                        angularVelocity.y * dt * CONFIG.inertiaMultiplier, 
-                        angularVelocity.x * dt * CONFIG.inertiaMultiplier, 
-                        0, 'XYZ'
-                    )
-                );
-                model.quaternion.multiplyQuaternions(dr, model.quaternion);
-                angularVelocity.multiplyScalar(CONFIG.inertiaDamping);
-            } else {
-                model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed);
-            }
-        } else if (cursorFollowEnabled && !isLookingAround) {
-            model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed * 2);
-        }
-    }
-    
-    renderer.render(scene, camera);
-}
+function updateCursorFollow() { if (!cursorFollowEnabled || !model || currentState !== DRONE_STATE.INTERACTIVE) return; currentPosition.x += (targetPosition.x - currentPosition.x) * CONFIG.followSpeed * CONFIG.followSensitivity; currentPosition.y += (targetPosition.y - currentPosition.y) * CONFIG.followSpeed * CONFIG.followSensitivity; model.position.x = currentPosition.x; model.position.z = currentPosition.y; const angle = Math.atan2(targetPosition.y - currentPosition.y, targetPosition.x - currentPosition.x); targetQuaternion.setFromEuler(new THREE.Euler(0, angle, 0)); }
+container.addEventListener('mousemove', (e) => { if (currentState === DRONE_STATE.INTERACTIVE) { const rect = container.getBoundingClientRect(); const x = (e.clientX - rect.left) / rect.width; const y = (e.clientY - rect.top) / rect.height; mousePosition.x = x; mousePosition.y = y; if (cursorFollowEnabled) { targetPosition.x = (x - 0.5) * 8; targetPosition.y = -(y - 0.5) * 6; } } });
+function blinkEyes() { if (currentState !== DRONE_STATE.INTERACTIVE) return; isBlinking = true; eyeMaterials.forEach(material => { material.emissiveIntensity = 0.05; }); setTimeout(() => { if (currentState === DRONE_STATE.INTERACTIVE && !isBlinking) return; eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; }); isBlinking = false; }, CONFIG.eyes.blinkDuration); }
+function scanEyes() { if (currentState !== DRONE_STATE.INTERACTIVE || isScanning) return; isScanning = true; const startTime = clock.getElapsedTime(); const scanAnimation = () => { if (!isScanning || currentState !== DRONE_STATE.INTERACTIVE) { isScanning = false; return; } const elapsed = clock.getElapsedTime() - startTime; const progress = elapsed / (CONFIG.eyes.scanDuration / 1000); if (progress >= 1) { isScanning = false; eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; }); return; } const intensity = CONFIG.eyes.normalIntensity + Math.sin(progress * Math.PI * 6) * 0.3; eyeMaterials.forEach(material => { material.emissiveIntensity = Math.max(0.1, intensity); }); requestAnimationFrame(scanAnimation); }; scanAnimation(); }
+function animate() { requestAnimationFrame(animate); const dt = clock.getDelta(), et = clock.getElapsedTime(); if (model) { let amplitude, speed; switch(currentState) { case DRONE_STATE.SLEEPING: amplitude = CONFIG.sleeping.levitationAmplitude; speed = CONFIG.sleeping.levitationSpeed; break; case DRONE_STATE.BOOTING: const bootProgress = Math.min((et - bootingStartTime) / 3, 1); amplitude = CONFIG.sleeping.levitationAmplitude + (CONFIG.levitationAmplitude - CONFIG.sleeping.levitationAmplitude) * bootProgress; speed = CONFIG.sleeping.levitationSpeed + (CONFIG.levitationSpeed - CONFIG.sleeping.levitationSpeed) * bootProgress; if (screenMaterial) { screenMaterial.emissiveIntensity = 0.3; const colorProgress = Math.min(bootProgress, 1); screenMaterial.emissive.setRGB( (1 - colorProgress) * 0.4, colorProgress * 1.0, 0); } edgeMaterials.forEach(material => { material.emissiveIntensity = bootProgress * 0.2; material.emissive.setRGB((1 - bootProgress) * 0.2, bootProgress * 0.4, 0); }); eyeMaterials.forEach(material => { material.emissiveIntensity = bootProgress * 0.4; material.emissive.setRGB((1 - bootProgress) * 0.4, bootProgress * 1.0, 0); }); break; case DRONE_STATE.PASSIVE: case DRONE_STATE.PASSIVE_WAITING: amplitude = CONFIG.sleeping.levitationAmplitude * 1.8; speed = CONFIG.sleeping.levitationSpeed * 1.5; if (screenMaterial) { screenMaterial.emissiveIntensity = 0.25 + Math.sin(et * CONFIG.screen.idlePulseSpeed) * 0.1; screenMaterial.emissive.set(CONFIG.screen.activeColor); } eyeMaterials.forEach(material => { material.emissiveIntensity = 0.2; material.emissive.set(CONFIG.eyes.color); }); edgeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; material.emissive.set(0x001a0a); }); break; case DRONE_STATE.ACTIVATING: const activationProgress = Math.min((et - activationStartTime) / (CONFIG.passiveToActiveTransitionTime / 1000), 1); amplitude = CONFIG.sleeping.levitationAmplitude * 1.8 + (CONFIG.levitationAmplitude - CONFIG.sleeping.levitationAmplitude * 1.8) * activationProgress; speed = CONFIG.sleeping.levitationSpeed * 1.5 + (CONFIG.levitationSpeed - CONFIG.sleeping.levitationSpeed * 1.5) * activationProgress; if (screenMaterial) { screenMaterial.emissiveIntensity = 0.25 + activationProgress * 0.05; screenMaterial.emissive.set(CONFIG.screen.activeColor); } eyeMaterials.forEach(material => { material.emissiveIntensity = 0.2 + activationProgress * (CONFIG.eyes.normalIntensity - 0.2); material.emissive.set(CONFIG.eyes.color); }); if (activationProgress >= 1) { currentState = DRONE_STATE.INTERACTIVE; document.getElementById('control-panel').classList.add('active'); toggleEnergyParticles(true); blinkTimer = et * 1000; scanTimer = et * 1000; container.style.cursor = 'grab'; setTimeout(() => performLookAround(), 500); } break; default: amplitude = CONFIG.levitationAmplitude; speed = CONFIG.levitationSpeed; if (screenMaterial) { screenMaterial.emissive.set(CONFIG.screen.activeColor); screenMaterial.emissiveIntensity = 0.3; } if (!isBlinking && !isScanning) { eyeMaterials.forEach(material => { material.emissive.set(CONFIG.eyes.color); material.emissiveIntensity = CONFIG.eyes.normalIntensity; }); if (et * 1000 - blinkTimer > CONFIG.eyes.blinkInterval) { blinkTimer = et * 1000; blinkEyes(); } if (et * 1000 - scanTimer > CONFIG.eyes.scanInterval) { scanTimer = et * 1000; scanEyes(); } } edgeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.sleeping.emissiveIntensity; material.emissive.set(0x001a0a); }); updateCursorFollow(); } if (!cursorFollowEnabled) { model.position.y = Math.sin(et * speed) * amplitude; } else { const baseY = Math.sin(et * speed) * amplitude * 0.5; model.position.y = baseY; } if (currentState === DRONE_STATE.INTERACTIVE && !cursorFollowEnabled && !isLookingAround) { if (angularVelocity.lengthSq() > CONFIG.velocityThreshold) { const dr = new THREE.Quaternion().setFromEuler(new THREE.Euler(angularVelocity.y * dt * CONFIG.inertiaMultiplier, angularVelocity.x * dt * CONFIG.inertiaMultiplier, 0, 'XYZ')); model.quaternion.multiplyQuaternions(dr, model.quaternion); angularVelocity.multiplyScalar(CONFIG.inertiaDamping); } else { model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed); } } else if (cursorFollowEnabled && !isLookingAround) { model.quaternion.slerp(targetQuaternion, CONFIG.followSpeed * 2); } } renderer.render(scene, camera); }
 animate();
-
-// --- ЛОГИКА СОСТОЯНИЙ ---
-function onDoubleClick() {
-    if (currentState === DRONE_STATE.SLEEPING || currentState === DRONE_STATE.PASSIVE_WAITING) {
-        initAudio();
-        startBootSequence();
-    }
-}
-
-function startBootSequence() {
-    currentState = DRONE_STATE.BOOTING;
-    bootingStartTime = clock.getElapsedTime();
-    container.classList.remove('sleeping', 'passive-waiting');
-    
-    const bootEffect = document.getElementById('boot-sequence');
-    bootEffect.classList.add('active');
-    
-    playBootSequence();
-    
-    if (model) {
-        const originalScale = model.scale.x;
-        model.scale.multiplyScalar(0.92);
-        
-        setTimeout(() => {
-            model.scale.multiplyScalar(1.15);
-            setTimeout(() => {
-                model.scale.setScalar(originalScale);
-            }, 150);
-        }, 400);
-    }
-    
-    setTimeout(() => {
-        bootEffect.classList.remove('active');
-        document.getElementById('mode-selection').classList.add('show');
-    }, 3000);
-}
-
-function setPassiveMode() {
-    currentState = DRONE_STATE.PASSIVE;
-    document.getElementById('mode-selection').classList.remove('show');
-    playModeSelectSound();
-    document.getElementById('passive-status').classList.add('show');
-    
-    ambientLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-    mainLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-    accentLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-    toggleEnergyParticles(false);
-    
-    setTimeout(() => {
-        if (currentState === DRONE_STATE.PASSIVE) {
-            currentState = DRONE_STATE.PASSIVE_WAITING;
-            container.classList.add('passive-waiting');
-            document.getElementById('passive-status').innerHTML = 'Режим ожидания. Двойной клик для активации.';
-        }
-    }, 5000);
-}
-
-function setInteractiveMode() {
-    currentState = DRONE_STATE.ACTIVATING;
-    activationStartTime = clock.getElapsedTime();
-    document.getElementById('mode-selection').classList.remove('show');
-    playModeSelectSound();
-    document.getElementById('passive-status').classList.remove('show');
-    
-    ambientLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-    mainLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-    accentLight.intensity = CONFIG.sleeping.lightIntensity * 2;
-}
-
-function goToSleep() {
-    currentState = DRONE_STATE.SLEEPING;
-    container.classList.add('sleeping');
-    container.classList.remove('passive-waiting');
-    playShutdownSound();
-    
-    ambientLight.intensity = CONFIG.sleeping.lightIntensity;
-    mainLight.intensity = CONFIG.sleeping.lightIntensity;
-    accentLight.intensity = CONFIG.sleeping.lightIntensity;
-    
-    document.getElementById('control-panel').classList.remove('active');
-    document.getElementById('passive-status').classList.remove('show');
-    document.getElementById('settings-panel').classList.remove('active');
-    document.getElementById('ai-chat').classList.remove('active');
-    
-    cursorFollowEnabled = false;
-    if (model) {
-        model.position.x = 0;
-        model.position.z = 0;
-    }
-    
-    toggleEnergyParticles(false);
-    container.style.cursor = 'pointer';
-}
-
-// --- ОБРАБОТКА КЛИКОВ ---
-container.addEventListener('click', (e) => {
-    const currentTime = Date.now();
-    if (currentState === DRONE_STATE.SLEEPING || currentState === DRONE_STATE.PASSIVE_WAITING) {
-        if (currentTime - lastClickTime < 350) {
-            onDoubleClick();
-        }
-    }
-    lastClickTime = currentTime;
-});
-
+function onDoubleClick() { if (currentState === DRONE_STATE.SLEEPING || currentState === DRONE_STATE.PASSIVE_WAITING) { initAudio(); startBootSequence(); } }
+function startBootSequence() { currentState = DRONE_STATE.BOOTING; bootingStartTime = clock.getElapsedTime(); container.classList.remove('sleeping', 'passive-waiting'); const bootEffect = document.getElementById('boot-sequence'); bootEffect.classList.add('active'); playBootSequence(); if (model) { const originalScale = model.scale.x; model.scale.multiplyScalar(0.92); setTimeout(() => { model.scale.multiplyScalar(1.15); setTimeout(() => { model.scale.setScalar(originalScale); }, 150); }, 400); } setTimeout(() => { bootEffect.classList.remove('active'); document.getElementById('mode-selection').classList.add('show'); }, 3000); }
+function setPassiveMode() { currentState = DRONE_STATE.PASSIVE; document.getElementById('mode-selection').classList.remove('show'); playModeSelectSound(); document.getElementById('passive-status').classList.add('show'); ambientLight.intensity = CONFIG.sleeping.lightIntensity * 2; mainLight.intensity = CONFIG.sleeping.lightIntensity * 2; accentLight.intensity = CONFIG.sleeping.lightIntensity * 2; toggleEnergyParticles(false); setTimeout(() => { if (currentState === DRONE_STATE.PASSIVE) { currentState = DRONE_STATE.PASSIVE_WAITING; container.classList.add('passive-waiting'); document.getElementById('passive-status').innerHTML = 'Режим ожидания. Двойной клик для активации.'; } }, 5000); }
+function setInteractiveMode() { currentState = DRONE_STATE.ACTIVATING; activationStartTime = clock.getElapsedTime(); document.getElementById('mode-selection').classList.remove('show'); playModeSelectSound(); document.getElementById('passive-status').classList.remove('show'); ambientLight.intensity = CONFIG.sleeping.lightIntensity * 2; mainLight.intensity = CONFIG.sleeping.lightIntensity * 2; accentLight.intensity = CONFIG.sleeping.lightIntensity * 2; }
+function goToSleep() { currentState = DRONE_STATE.SLEEPING; container.classList.add('sleeping'); container.classList.remove('passive-waiting'); playShutdownSound(); ambientLight.intensity = CONFIG.sleeping.lightIntensity; mainLight.intensity = CONFIG.sleeping.lightIntensity; accentLight.intensity = CONFIG.sleeping.lightIntensity; document.getElementById('control-panel').classList.remove('active'); document.getElementById('passive-status').classList.remove('show'); document.getElementById('settings-panel').classList.remove('active'); document.getElementById('ai-chat').classList.remove('active'); cursorFollowEnabled = false; if (model) { model.position.x = 0; model.position.z = 0; } toggleEnergyParticles(false); container.style.cursor = 'pointer'; }
+container.addEventListener('click', (e) => { const currentTime = Date.now(); if (currentState === DRONE_STATE.SLEEPING || currentState === DRONE_STATE.PASSIVE_WAITING) { if (currentTime - lastClickTime < 350) { onDoubleClick(); } } lastClickTime = currentTime; });
 document.getElementById('passive-mode').addEventListener('click', setPassiveMode);
 document.getElementById('interactive-mode').addEventListener('click', setInteractiveMode);
-
-// --- ИНТЕРАКТИВНОСТЬ ---
-function onPointerDown(e) { 
-    if (currentState !== DRONE_STATE.INTERACTIVE || cursorFollowEnabled) return;
-    if (document.getElementById('settings-panel').contains(e.target) || 
-        document.getElementById('ai-chat').contains(e.target)) return;
-    
-    isDragging = true; 
-    angularVelocity.set(0, 0); 
-    container.style.cursor = 'grabbing'; 
-    previousMousePosition = { x: e.clientX || e.touches?.[0].clientX, y: e.clientY || e.touches?.[0].clientY }; 
-}
-function onPointerUp() { 
-    if (currentState !== DRONE_STATE.INTERACTIVE) return;
-    isDragging = false; 
-    container.style.cursor = 'grab'; 
-}
-function onPointerMove(e) {
-    if (!model || !isDragging || currentState !== DRONE_STATE.INTERACTIVE || cursorFollowEnabled) return;
-    
-    const x = e.clientX || e.touches?.[0].clientX, y = e.clientY || e.touches?.[0].clientY;
-    const dM = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
-    const dR = new THREE.Quaternion().setFromEuler(new THREE.Euler(dM.y * CONFIG.dragRotationSpeed, dM.x * CONFIG.dragRotationSpeed, 0, 'XYZ'));
-    model.quaternion.multiplyQuaternions(dR, model.quaternion);
-    angularVelocity.set(dM.x, dM.y); 
-    previousMousePosition = { x, y };
-}
-
+function onPointerDown(e) { if (currentState !== DRONE_STATE.INTERACTIVE || cursorFollowEnabled) return; if (document.getElementById('settings-panel').contains(e.target) || document.getElementById('ai-chat').contains(e.target)) return; isDragging = true; angularVelocity.set(0, 0); container.style.cursor = 'grabbing'; previousMousePosition = { x: e.clientX || e.touches?.[0].clientX, y: e.clientY || e.touches?.[0].clientY }; }
+function onPointerUp() { if (currentState !== DRONE_STATE.INTERACTIVE) return; isDragging = false; container.style.cursor = 'grab'; }
+function onPointerMove(e) { if (!model || !isDragging || currentState !== DRONE_STATE.INTERACTIVE || cursorFollowEnabled) return; const x = e.clientX || e.touches?.[0].clientX, y = e.clientY || e.touches?.[0].clientY; const dM = { x: x - previousMousePosition.x, y: y - previousMousePosition.y }; const dR = new THREE.Quaternion().setFromEuler(new THREE.Euler(dM.y * CONFIG.dragRotationSpeed, dM.x * CONFIG.dragRotationSpeed, 0, 'XYZ')); model.quaternion.multiplyQuaternions(dR, model.quaternion); angularVelocity.set(dM.x, dM.y); previousMousePosition = { x, y }; }
 container.addEventListener('mousedown', onPointerDown); 
 window.addEventListener('mouseup', onPointerUp); 
 window.addEventListener('mousemove', onPointerMove);
 container.addEventListener('touchstart', onPointerDown, { passive: true }); 
 window.addEventListener('touchend', onPointerUp); 
 window.addEventListener('touchmove', onPointerMove, { passive: true });
-
-container.addEventListener('mouseenter', () => { 
-    if (currentState !== DRONE_STATE.INTERACTIVE) return;
-    isMouseOver = true; 
-    if (!isBlinking && !isScanning) {
-        eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.scanIntensity; });
-    }
-});
-container.addEventListener('mouseleave', () => { 
-    if (currentState !== DRONE_STATE.INTERACTIVE) return;
-    isMouseOver = false; 
-    targetQuaternion.copy(homeQuaternion); 
-    if (!isBlinking && !isScanning) {
-        eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; });
-    }
-});
-
-// --- НАСТРОЙКА UI ---
-function setupUI() {
-    document.getElementById('settings-toggle').addEventListener('click', () => {
-        document.getElementById('settings-panel').classList.toggle('active');
-    });
-    
-    document.getElementById('follow-toggle').addEventListener('click', () => {
-        if (currentState === DRONE_STATE.INTERACTIVE) {
-            cursorFollowEnabled = !cursorFollowEnabled;
-            document.getElementById('cursor-follow').checked = cursorFollowEnabled;
-            document.getElementById('follow-toggle').classList.toggle('active', cursorFollowEnabled);
-            if (!cursorFollowEnabled && model) {
-                model.position.set(0, 0, 0);
-                currentPosition = { x: 0, y: 0 };
-                targetPosition = { x: 0, y: 0 };
-            }
-            playModeSelectSound();
-        }
-    });
-    
-    document.getElementById('ai-toggle').addEventListener('click', () => {
-        document.getElementById('ai-chat').classList.toggle('active');
-    });
-    
-    document.getElementById('close-settings').addEventListener('click', () => {
-        document.getElementById('settings-panel').classList.remove('active');
-    });
-    
-    document.getElementById('close-chat').addEventListener('click', () => {
-        document.getElementById('ai-chat').classList.remove('active');
-    });
-    
-    const controls = {
-        'followSpeed': (v) => CONFIG.followSpeed = parseFloat(v),
-        'followSensitivity': (v) => CONFIG.followSensitivity = parseFloat(v),
-        'dragSensitivity': (v) => CONFIG.dragRotationSpeed = parseFloat(v),
-        'inertiaMultiplier': (v) => CONFIG.inertiaMultiplier = parseFloat(v),
-        'inertiaDamping': (v) => CONFIG.inertiaDamping = parseFloat(v),
-        'levitationAmplitude': (v) => CONFIG.levitationAmplitude = parseFloat(v),
-        'levitationSpeed': (v) => CONFIG.levitationSpeed = parseFloat(v),
-        'robotScale': (v) => { 
-            CONFIG.robotScale = parseFloat(v); 
-            if (model) model.scale.set(v, v, v); 
-        },
-        'baseEmissive': (v) => {
-            CONFIG.baseEmissive = parseFloat(v);
-            CONFIG.eyes.normalIntensity = parseFloat(v);
-        },
-        'accentLightColor': (v) => {
-            CONFIG.accentLightColor = v;
-            accentLight.color.set(v);
-        },
-        'eyesColor': (v) => {
-            CONFIG.eyes.color = v;
-            if (currentState === DRONE_STATE.INTERACTIVE || currentState === DRONE_STATE.PASSIVE || currentState === DRONE_STATE.PASSIVE_WAITING) {
-                eyeMaterials.forEach(material => material.emissive.set(v));
-            }
-        },
-        'cursor-follow': (checked) => {
-            if (currentState === DRONE_STATE.INTERACTIVE) {
-                cursorFollowEnabled = checked;
-                document.getElementById('follow-toggle').classList.toggle('active', checked);
-                if (!checked && model) {
-                    model.position.set(0, 0, 0);
-                    currentPosition = { x: 0, y: 0 };
-                    targetPosition = { x: 0, y: 0 };
-                }
-            }
-        }
-    };
-    
-    const initValues = {
-        'followSpeed': CONFIG.followSpeed,
-        'followSensitivity': CONFIG.followSensitivity,
-        'dragSensitivity': CONFIG.dragRotationSpeed,
-        'inertiaMultiplier': CONFIG.inertiaMultiplier,
-        'inertiaDamping': CONFIG.inertiaDamping,
-        'levitationAmplitude': CONFIG.levitationAmplitude,
-        'levitationSpeed': CONFIG.levitationSpeed,
-        'robotScale': CONFIG.robotScale,
-        'baseEmissive': CONFIG.baseEmissive,
-        'accentLightColor': CONFIG.accentLightColor,
-        'eyesColor': CONFIG.eyes.color
-    };
-    
-    for (const [id, value] of Object.entries(initValues)) {
-        const element = document.getElementById(id);
-        if (element && element.type !== 'checkbox') {
-            element.value = value;
-        }
-    }
-    
-    for (const [id, handler] of Object.entries(controls)) {
-        const element = document.getElementById(id);
-        if (element) {
-            if (element.type === 'checkbox') {
-                element.addEventListener('change', (e) => handler(e.target.checked));
-            } else {
-                element.addEventListener('input', (e) => handler(e.target.value));
-            }
-        }
-    }
-    
-    setupAIChat();
-}
-
-function setupAIChat() {
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-message');
-    const chatMessages = document.getElementById('chat-messages');
-    
-    function addMessage(text, isUser = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-        messageDiv.textContent = text;
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    function addTypingIndicator() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message typing';
-        typingDiv.textContent = 'AI печатает...';
-        chatMessages.appendChild(typingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        return typingDiv;
-    }
-    
-    async function sendMessage() {
-        const text = chatInput.value.trim();
-        if (!text || isProcessingCommand) return;
-        
-        addMessage(text, true);
-        chatInput.value = '';
-        sendButton.disabled = true;
-        isProcessingCommand = true;
-        
-        const typingIndicator = addTypingIndicator();
-        
-        try {
-            const response = await aiProcessor.processCommand(text);
-            typingIndicator.remove();
-            addMessage(response);
-        } catch (error) {
-            typingIndicator.remove();
-            addMessage('Произошла ошибка при обработке команды: ' + error.message);
-        } finally {
-            isProcessingCommand = false;
-            sendButton.disabled = false;
-        }
-    }
-    
-    sendButton.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-}
-
-// --- АВТОМАТИЧЕСКОЕ ВЫКЛЮЧЕНИЕ ---
-setInterval(() => {
-    if (currentState === DRONE_STATE.PASSIVE || currentState === DRONE_STATE.PASSIVE_WAITING) {
-        const timeSincePassive = clock.getElapsedTime() - bootingStartTime;
-        if (timeSincePassive > 30) {
-            goToSleep();
-        }
-    }
-}, 1000);
-
-// --- ОБРАБОТКА ИЗМЕНЕНИЯ РАЗМЕРА ОКНА ---
-window.addEventListener('resize', () => { 
-    camera.aspect = container.clientWidth / container.clientHeight; 
-    camera.updateProjectionMatrix(); 
-    renderer.setSize(container.clientWidth, container.clientHeight); 
-});
-
-// --- DEBUG GUI ---
+container.addEventListener('mouseenter', () => { if (currentState !== DRONE_STATE.INTERACTIVE) return; isMouseOver = true; if (!isBlinking && !isScanning) { eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.scanIntensity; }); } });
+container.addEventListener('mouseleave', () => { if (currentState !== DRONE_STATE.INTERACTIVE) return; isMouseOver = false; targetQuaternion.copy(homeQuaternion); if (!isBlinking && !isScanning) { eyeMaterials.forEach(material => { material.emissiveIntensity = CONFIG.eyes.normalIntensity; }); } });
+function setupUI() { document.getElementById('settings-toggle').addEventListener('click', () => { document.getElementById('settings-panel').classList.toggle('active'); }); document.getElementById('follow-toggle').addEventListener('click', () => { if (currentState === DRONE_STATE.INTERACTIVE) { cursorFollowEnabled = !cursorFollowEnabled; document.getElementById('cursor-follow').checked = cursorFollowEnabled; document.getElementById('follow-toggle').classList.toggle('active', cursorFollowEnabled); if (!cursorFollowEnabled && model) { model.position.set(0, 0, 0); currentPosition = { x: 0, y: 0 }; targetPosition = { x: 0, y: 0 }; } playModeSelectSound(); } }); document.getElementById('ai-toggle').addEventListener('click', () => { document.getElementById('ai-chat').classList.toggle('active'); }); document.getElementById('close-settings').addEventListener('click', () => { document.getElementById('settings-panel').classList.remove('active'); }); document.getElementById('close-chat').addEventListener('click', () => { document.getElementById('ai-chat').classList.remove('active'); }); const controls = { 'followSpeed': (v) => CONFIG.followSpeed = parseFloat(v), 'followSensitivity': (v) => CONFIG.followSensitivity = parseFloat(v), 'dragSensitivity': (v) => CONFIG.dragRotationSpeed = parseFloat(v), 'inertiaMultiplier': (v) => CONFIG.inertiaMultiplier = parseFloat(v), 'inertiaDamping': (v) => CONFIG.inertiaDamping = parseFloat(v), 'levitationAmplitude': (v) => CONFIG.levitationAmplitude = parseFloat(v), 'levitationSpeed': (v) => CONFIG.levitationSpeed = parseFloat(v), 'robotScale': (v) => { CONFIG.robotScale = parseFloat(v); if (model) model.scale.set(v, v, v); }, 'baseEmissive': (v) => { CONFIG.baseEmissive = parseFloat(v); CONFIG.eyes.normalIntensity = parseFloat(v); }, 'accentLightColor': (v) => { CONFIG.accentLightColor = v; accentLight.color.set(v); }, 'eyesColor': (v) => { CONFIG.eyes.color = v; if (currentState === DRONE_STATE.INTERACTIVE || currentState === DRONE_STATE.PASSIVE || currentState === DRONE_STATE.PASSIVE_WAITING) { eyeMaterials.forEach(material => material.emissive.set(v)); } }, 'cursor-follow': (checked) => { if (currentState === DRONE_STATE.INTERACTIVE) { cursorFollowEnabled = checked; document.getElementById('follow-toggle').classList.toggle('active', checked); if (!checked && model) { model.position.set(0, 0, 0); currentPosition = { x: 0, y: 0 }; targetPosition = { x: 0, y: 0 }; } } } }; const initValues = { 'followSpeed': CONFIG.followSpeed, 'followSensitivity': CONFIG.followSensitivity, 'dragSensitivity': CONFIG.dragRotationSpeed, 'inertiaMultiplier': CONFIG.inertiaMultiplier, 'inertiaDamping': CONFIG.inertiaDamping, 'levitationAmplitude': CONFIG.levitationAmplitude, 'levitationSpeed': CONFIG.levitationSpeed, 'robotScale': CONFIG.robotScale, 'baseEmissive': CONFIG.baseEmissive, 'accentLightColor': CONFIG.accentLightColor, 'eyesColor': CONFIG.eyes.color }; for (const [id, value] of Object.entries(initValues)) { const element = document.getElementById(id); if (element && element.type !== 'checkbox') { element.value = value; } } for (const [id, handler] of Object.entries(controls)) { const element = document.getElementById(id); if (element) { if (element.type === 'checkbox') { element.addEventListener('change', (e) => handler(e.target.checked)); } else { element.addEventListener('input', (e) => handler(e.target.value)); } } } setupAIChat(); }
+function setupAIChat() { const chatInput = document.getElementById('chat-input'); const sendButton = document.getElementById('send-message'); const chatMessages = document.getElementById('chat-messages'); function addMessage(text, isUser = false) { const messageDiv = document.createElement('div'); messageDiv.className = `message ${isUser ? 'user' : 'ai'}`; messageDiv.textContent = text; chatMessages.appendChild(messageDiv); chatMessages.scrollTop = chatMessages.scrollHeight; } function addTypingIndicator() { const typingDiv = document.createElement('div'); typingDiv.className = 'message typing'; typingDiv.textContent = 'AI печатает...'; chatMessages.appendChild(typingDiv); chatMessages.scrollTop = chatMessages.scrollHeight; return typingDiv; } async function sendMessage() { const text = chatInput.value.trim(); if (!text || isProcessingCommand) return; addMessage(text, true); chatInput.value = ''; sendButton.disabled = true; isProcessingCommand = true; const typingIndicator = addTypingIndicator(); try { const response = await aiProcessor.processCommand(text); typingIndicator.remove(); addMessage(response); } catch (error) { typingIndicator.remove(); addMessage('Произошла ошибка при обработке команды: ' + error.message); } finally { isProcessingCommand = false; sendButton.disabled = false; } } sendButton.addEventListener('click', sendMessage); chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }); }
+setInterval(() => { if (currentState === DRONE_STATE.PASSIVE || currentState === DRONE_STATE.PASSIVE_WAITING) { const timeSincePassive = clock.getElapsedTime() - bootingStartTime; if (timeSincePassive > 30) { goToSleep(); } } }, 1000);
+window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
 const gui = new lil.GUI(); 
 gui.hide(); 
-window.addEventListener('keydown', (e) => { 
-    if (e.key.toLowerCase() === 'd') gui.show(gui._hidden); 
-});
+window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'd') gui.show(gui._hidden); });
 </script>
 </body>
 </html>
