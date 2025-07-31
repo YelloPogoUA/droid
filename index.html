@@ -1156,38 +1156,38 @@ class AICommandProcessor {
     // ===================================================================
     // ИЗМЕНЕННАЯ ФУНКЦИЯ ДЛЯ РАБОТЫ С СЕРВЕРОМ
     // ===================================================================
-    async processWithGemini(text) {
+       async processWithGemini(text) {
         try {
-            // Обращаемся к нашему локальному серверу, а не напрямую к Google
-            // ЗАМЕНИТЕ НА ЭТО:
-const response = await fetch('https://droid-production-3cef.up.railway.app/api/gemini', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text: text })
-});
+            // Используем ПОЛНЫЙ АДРЕС сервера на Railway
+            const response = await fetch('https://droid-production-3cef.up.railway.app/api/gemini', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                // Отображаем ошибку, которую нам прислал наш сервер
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
+            // ЧИТАЕМ ОТВЕТ ТОЛЬКО ОДИН РАЗ
             const data = await response.json();
 
+            // ТЕПЕРЬ ПРОВЕРЯЕМ, БЫЛ ЛИ ЗАПРОС УСПЕШНЫМ
+            if (!response.ok) {
+                // Если была ошибка, то в 'data' уже лежит ее описание от сервера
+                const errorMessage = data.error || `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            // Если все хорошо, обрабатываем успешный ответ
             if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 return data.candidates[0].content.parts[0].text;
-            } else if (data.promptFeedback) {
-                 // Обработка блокировки контента
-                 console.warn("Запрос был заблокирован:", data.promptFeedback);
-                 return "Мой внутренний фильтр безопасности сработал на ваш запрос. Давайте попробуем другую формулировку.";
             } else {
-                return 'Извините, не смог обработать ваш запрос.';
+                // На случай, если сервер вернул успешный статус, но пустые данные
+                return 'Получен странный ответ от AI.';
             }
         } catch (error) {
-            console.error('Ошибка при обращении к прокси-серверу:', error);
-            return `Ошибка связи с AI сервисом: ${error.message}. Убедитесь, что локальный сервер запущен.`;
+            console.error('Ошибка связи с AI сервисом:', error);
+            // Эта ошибка теперь будет более информативной
+            return `Ошибка связи с AI сервисом: ${error.message}`;
         }
     }
 }
